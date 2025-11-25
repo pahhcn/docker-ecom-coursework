@@ -1,29 +1,29 @@
-# E-commerce Backend Service
+# 电商后端服务
 
-## Docker Build
+## Docker 构建
 
-### Multi-stage Build Strategy
+### 多阶段构建策略
 
-This Dockerfile uses a multi-stage build approach to optimize the final image size:
+此 Dockerfile 使用多阶段构建方法来优化最终镜像大小:
 
-**Stage 1: Build Stage**
-- Base image: `maven:3.9-eclipse-temurin-17`
-- Purpose: Compile and package the Spring Boot application
-- Optimization: Copies `pom.xml` first to leverage Docker layer caching for dependencies
+**阶段 1: 构建阶段**
+- 基础镜像: `maven:3.9-eclipse-temurin-17`
+- 目的: 编译和打包 Spring Boot 应用
+- 优化: 首先复制 `pom.xml` 以利用 Docker 层缓存来缓存依赖项
 
-**Stage 2: Runtime Stage**
-- Base image: `eclipse-temurin:17-jre-alpine`
-- Purpose: Run the application with minimal footprint
-- Size: < 200MB (target < 500MB per requirements)
-- Security: Runs as non-root user
+**阶段 2: 运行阶段**
+- 基础镜像: `eclipse-temurin:17-jre-alpine`
+- 目的: 以最小占用运行应用
+- 大小: < 200MB (目标 < 500MB,符合要求)
+- 安全性: 以非 root 用户运行
 
-### Build Instructions
+### 构建说明
 
 ```bash
-# Build the Docker image
+# 构建 Docker 镜像
 docker build -t ecommerce-backend:latest .
 
-# Run the container
+# 运行容器
 docker run -p 8080:8080 \
   -e DB_HOST=mysql \
   -e DB_PORT=3306 \
@@ -33,38 +33,38 @@ docker run -p 8080:8080 \
   ecommerce-backend:latest
 ```
 
-### Environment Variables
+### 环境变量
 
-| Variable | Description | Default |
+| 变量 | 描述 | 默认值 |
 |----------|-------------|---------|
-| DB_HOST | Database hostname | mysql |
-| DB_PORT | Database port | 3306 |
-| DB_NAME | Database name | ecommerce |
-| DB_USER | Database username | root |
-| DB_PASSWORD | Database password | (required) |
-| SPRING_PROFILES_ACTIVE | Active Spring profile | default |
+| DB_HOST | 数据库主机名 | mysql |
+| DB_PORT | 数据库端口 | 3306 |
+| DB_NAME | 数据库名称 | ecommerce |
+| DB_USER | 数据库用户名 | root |
+| DB_PASSWORD | 数据库密码 | (必需) |
+| SPRING_PROFILES_ACTIVE | 活动的 Spring 配置文件 | default |
 
-### Health Check
+### 健康检查
 
-The container includes a health check that verifies the application is running:
-- Endpoint: `http://localhost:8080/actuator/health`
-- Interval: 30 seconds
-- Timeout: 3 seconds
-- Start period: 40 seconds
-- Retries: 3
+容器包含健康检查,用于验证应用是否正在运行:
+- 端点: `http://localhost:8080/actuator/health`
+- 间隔: 30 秒
+- 超时: 3 秒
+- 启动期间: 40 秒
+- 重试次数: 3
 
-### Image Optimization
+### 镜像优化
 
-The Dockerfile implements several optimizations:
+Dockerfile 实施了几种优化:
 
-1. **Layer Caching**: Dependencies are downloaded in a separate layer that only rebuilds when `pom.xml` changes
-2. **Multi-stage Build**: Build artifacts are not included in the final image
-3. **Alpine Base**: Uses Alpine Linux for minimal image size
-4. **JRE Only**: Runtime stage uses JRE instead of full JDK
-5. **Non-root User**: Application runs as unprivileged user for security
+1. **层缓存**: 依赖项在单独的层中下载,只有在 `pom.xml` 更改时才重新构建
+2. **多阶段构建**: 最终镜像中不包含构建工件
+3. **Alpine 基础镜像**: 使用 Alpine Linux 以获得最小镜像大小
+4. **仅 JRE**: 运行阶段使用 JRE 而不是完整的 JDK
+5. **非 root 用户**: 应用以非特权用户身份运行以提高安全性
 
-### Expected Image Size
+### 预期镜像大小
 
-- Build stage: ~800MB (not included in final image)
-- Runtime stage: ~180-200MB
-- Total final image: < 200MB (well under 500MB requirement)
+- 构建阶段: ~800MB (不包含在最终镜像中)
+- 运行阶段: ~180-200MB
+- 总最终镜像: < 200MB (远低于 500MB 要求)

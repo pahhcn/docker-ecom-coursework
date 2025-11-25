@@ -1,52 +1,52 @@
-# Database Service
+# 数据库服务
 
-MySQL 8.0 database service for the e-commerce system.
+电商系统的 MySQL 8.0 数据库服务。
 
-## Configuration
+## 配置
 
-- **Character Set**: UTF-8 (utf8mb4)
-- **Collation**: utf8mb4_unicode_ci
-- **Timezone**: UTC
-- **Max Connections**: 100
-- **Connection Timeout**: 30 seconds
+- **字符集**: UTF-8 (utf8mb4)
+- **排序规则**: utf8mb4_unicode_ci
+- **时区**: UTC
+- **最大连接数**: 100
+- **连接超时**: 30 秒
 
-## Schema
+## 模式
 
-### Products Table
+### Products 表
 
-| Column | Type | Description |
+| 列 | 类型 | 描述 |
 |--------|------|-------------|
-| id | BIGINT | Primary key, auto-increment |
-| name | VARCHAR(255) | Product name (required) |
-| description | TEXT | Product description |
-| price | DECIMAL(10,2) | Product price (required) |
-| stock_quantity | INT | Available stock (default: 0) |
-| category | VARCHAR(100) | Product category |
-| image_url | VARCHAR(500) | Product image URL |
-| created_at | TIMESTAMP | Creation timestamp |
-| updated_at | TIMESTAMP | Last update timestamp |
+| id | BIGINT | 主键,自动递增 |
+| name | VARCHAR(255) | 产品名称 (必需) |
+| description | TEXT | 产品描述 |
+| price | DECIMAL(10,2) | 产品价格 (必需) |
+| stock_quantity | INT | 可用库存 (默认: 0) |
+| category | VARCHAR(100) | 产品类别 |
+| image_url | VARCHAR(500) | 产品图片 URL |
+| created_at | TIMESTAMP | 创建时间戳 |
+| updated_at | TIMESTAMP | 最后更新时间戳 |
 
-### Indexes
+### 索引
 
-- `idx_category`: Index on category column for faster filtering
-- `idx_name`: Index on name column for faster searching
+- `idx_category`: category 列的索引,用于更快的过滤
+- `idx_name`: name 列的索引,用于更快的搜索
 
-## Initialization
+## 初始化
 
-The `init.sql` script:
-1. Creates the `ecommerce` database with UTF-8 encoding
-2. Creates the `products` table with proper schema
-3. Seeds 8 sample products for testing
+`init.sql` 脚本:
+1. 使用 UTF-8 编码创建 `ecommerce` 数据库
+2. 使用适当的模式创建 `products` 表
+3. 为测试填充 8 个示例产品
 
-## Building and Running
+## 构建和运行
 
-### Using Docker
+### 使用 Docker
 
 ```bash
-# Build the image
+# 构建镜像
 docker build -t ecommerce-mysql ./database
 
-# Run the container
+# 运行容器
 docker run -d \
   --name ecommerce-db \
   -p 3306:3306 \
@@ -54,74 +54,74 @@ docker run -d \
   ecommerce-mysql
 ```
 
-### Using Docker Compose
+### 使用 Docker Compose
 
-The database service is configured in `docker-compose.yml` and will start automatically with other services.
+数据库服务在 `docker-compose.yml` 中配置,将与其他服务一起自动启动。
 
-## Environment Variables
+## 环境变量
 
-- `MYSQL_ROOT_PASSWORD`: Root user password
-- `MYSQL_DATABASE`: Database name (default: ecommerce)
-- `MYSQL_USER`: Application user
-- `MYSQL_PASSWORD`: Application user password
+- `MYSQL_ROOT_PASSWORD`: Root 用户密码
+- `MYSQL_DATABASE`: 数据库名称 (默认: ecommerce)
+- `MYSQL_USER`: 应用用户
+- `MYSQL_PASSWORD`: 应用用户密码
 
-## Health Check
+## 健康检查
 
-The container includes a health check that pings MySQL every 10 seconds to ensure the service is running properly.
+容器包含健康检查,每 10 秒 ping 一次 MySQL 以确保服务正常运行。
 
-## Data Persistence
+## 数据持久化
 
-Data is persisted using a Docker volume mounted at `/var/lib/mysql`. This ensures data survives container restarts and removals.
+数据使用挂载在 `/var/lib/mysql` 的 Docker 卷持久化。这确保数据在容器重启和删除后仍然保留。
 
-## Connecting to the Database
+## 连接到数据库
 
-### From Backend Service
+### 从后端服务
 
-The backend service connects using environment variables:
-- Host: `mysql` (service name in Docker network)
-- Port: `3306`
-- Database: `ecommerce`
-- User: `ecommerce_user`
-- Password: `ecommerce_pass`
+后端服务使用环境变量连接:
+- 主机: `mysql` (Docker 网络中的服务名称)
+- 端口: `3306`
+- 数据库: `ecommerce`
+- 用户: `ecommerce_user`
+- 密码: `ecommerce_pass`
 
-### Direct Connection (Development)
+### 直接连接 (开发)
 
 ```bash
-# Using MySQL client
+# 使用 MySQL 客户端
 mysql -h localhost -P 3306 -u ecommerce_user -p
 
-# Using Docker exec
+# 使用 Docker exec
 docker exec -it ecommerce-db mysql -u ecommerce_user -p
 ```
 
-## Backup and Restore
+## 备份和恢复
 
-### Backup
+### 备份
 
 ```bash
 docker exec ecommerce-db mysqldump -u root -p ecommerce > backup.sql
 ```
 
-### Restore
+### 恢复
 
 ```bash
 docker exec -i ecommerce-db mysql -u root -p ecommerce < backup.sql
 ```
 
-## Troubleshooting
+## 故障排查
 
-### Connection Refused
+### 连接被拒绝
 
-- Ensure the container is running: `docker ps`
-- Check health status: `docker inspect ecommerce-db`
-- Verify port mapping: `docker port ecommerce-db`
+- 确保容器正在运行: `docker ps`
+- 检查健康状态: `docker inspect ecommerce-db`
+- 验证端口映射: `docker port ecommerce-db`
 
-### Initialization Script Not Running
+### 初始化脚本未运行
 
-- The init script only runs on first startup with an empty data directory
-- To re-run: remove the volume and restart the container
+- 初始化脚本仅在首次启动空数据目录时运行
+- 要重新运行: 删除卷并重启容器
 
-### Character Encoding Issues
+### 字符编码问题
 
-- Verify configuration: `docker exec ecommerce-db mysql -u root -p -e "SHOW VARIABLES LIKE 'char%';"`
-- Should show `utf8mb4` for all character set variables
+- 验证配置: `docker exec ecommerce-db mysql -u root -p -e "SHOW VARIABLES LIKE 'char%';"`
+- 应该为所有字符集变量显示 `utf8mb4`
