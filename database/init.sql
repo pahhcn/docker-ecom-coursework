@@ -1,0 +1,44 @@
+-- Database initialization script for e-commerce system
+-- This script creates the product schema and seeds initial data
+
+-- Set character set and collation
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
+-- Create database if not exists
+CREATE DATABASE IF NOT EXISTS ecommerce CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE ecommerce;
+
+-- Drop table if exists (for clean initialization)
+DROP TABLE IF EXISTS products;
+
+-- Create products table
+CREATE TABLE products (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    stock_quantity INT NOT NULL DEFAULT 0,
+    category VARCHAR(100),
+    image_url VARCHAR(500),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_category (category),
+    INDEX idx_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Seed initial product data
+INSERT INTO products (name, description, price, stock_quantity, category, image_url) VALUES
+('Laptop Pro 15', 'High-performance laptop with 15-inch display, Intel i7 processor, 16GB RAM, and 512GB SSD. Perfect for professionals and developers.', 1299.99, 25, 'Electronics', 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400'),
+('Wireless Mouse', 'Ergonomic wireless mouse with precision tracking, 6 programmable buttons, and long battery life. Compatible with Windows and Mac.', 29.99, 150, 'Electronics', 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400'),
+('USB-C Hub', '7-in-1 USB-C hub with HDMI, USB 3.0 ports, SD card reader, and power delivery. Ideal for expanding laptop connectivity.', 49.99, 80, 'Electronics', 'https://images.unsplash.com/photo-1625948515291-69613efd103f?w=400'),
+('Mechanical Keyboard', 'RGB backlit mechanical keyboard with Cherry MX switches, aluminum frame, and customizable keys. Great for gaming and typing.', 89.99, 60, 'Electronics', 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400'),
+('Noise-Cancelling Headphones', 'Premium over-ear headphones with active noise cancellation, 30-hour battery life, and superior sound quality.', 249.99, 40, 'Electronics', 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400'),
+('4K Monitor 27"', 'Ultra HD 4K monitor with IPS panel, HDR support, and 99% sRGB color accuracy. Perfect for content creators and designers.', 399.99, 30, 'Electronics', 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400'),
+('Webcam HD 1080p', 'Full HD webcam with autofocus, built-in microphone, and wide-angle lens. Ideal for video conferencing and streaming.', 79.99, 100, 'Electronics', 'https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=400'),
+('External SSD 1TB', 'Portable solid-state drive with USB 3.2 Gen 2 interface, up to 1050MB/s read speed, and shock-resistant design.', 129.99, 70, 'Electronics', 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400');
+
+-- Display confirmation message
+SELECT 'Database initialized successfully!' AS status;
+SELECT COUNT(*) AS total_products FROM products;
