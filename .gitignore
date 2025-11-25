@@ -1,0 +1,62 @@
+# Build artifacts
+target/
+build/
+dist/
+*.jar
+*.war
+*.ear
+*.kiro/
+.kiro/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Log files
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Docker volumes data
+mysql-data/
+data/
+
+# Sensitive data
+credentials/
+keys/
+secrets/
+
+# Node modules (if using npm for frontend tooling)
+node_modules/
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# Test coverage
+coverage/
+*.coverage
+
+# Temporary files
+tmp/
+temp/
+*.kiro/
+.kiro/

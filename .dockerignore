@@ -1,0 +1,53 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+docs/
+*.md
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# Build artifacts (exclude from context, will be built in container)
+target/
+build/
+dist/
+
+# Environment files
+.env
+.env.*
+
+# Log files
+*.log
+logs/
+
+# Test files
+**/test/
+**/*test*
+*.test.js
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+Jenkinsfile
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Kubernetes
+k8s/
+
+# Temporary files
+tmp/
+temp/
