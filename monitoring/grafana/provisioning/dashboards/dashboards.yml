@@ -1,0 +1,17 @@
+# Grafana 仪表板配置
+# Grafana Dashboard Configuration
+# 自动加载仪表板
+# Automatically load dashboards
+
+apiVersion: 1
+
+providers:
+  - name: 'E-commerce Dashboards'
+    orgId: 1
+    folder: 'E-commerce'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

@@ -1,0 +1,177 @@
+# Prometheus 告警规则
+# Prometheus Alerting Rules
+# 定义关键问题的告警规则
+# Define alerting rules for critical issues
+
+groups:
+  # 应用程序告警组 - Application alerts group
+  - name: application_alerts
+    interval: 30s
+    rules:
+      # 高错误率告警 - High error rate alert
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m])) 
+            / 
+            sum(rate(http_server_requests_seconds_count[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: backend
+        annotations:
+          summary: "高错误率检测 - High error rate detected"
+          description: "后端服务错误率超过 5% (当前值: {{ $value | humanizePercentage }}) - Backend service error rate exceeds 5% (current: {{ $value | humanizePercentage }})"
+
+      # 高响应时间告警 - High response time alert
+      - alert: HighResponseTime
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(http_server_requests_seconds_bucket[5m])) by (le, uri)
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: backend
+        annotations:
+          summary: "高响应时间检测 - High response time detected"
+          description: "API 响应时间 P95 超过 1 秒 (当前值: {{ $value }}s) - API response time P95 exceeds 1 second (current: {{ $value }}s)"
+
+      # 服务不可用告警 - Service down alert
+      - alert: ServiceDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: backend
+        annotations:
+          summary: "后端服务宕机 - Backend service is down"
+          description: "后端服务 {{ $labels.instance }} 已宕机超过 1 分钟 - Backend service {{ $labels.instance }} has been down for more than 1 minute"
+
+      # JVM 内存使用率高 - High JVM memory usage
+      - alert: HighJVMMemoryUsage
+        expr: |
+          (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: backend
+        annotations:
+          summary: "JVM 堆内存使用率高 - High JVM heap memory usage"
+          description: "JVM 堆内存使用率超过 85% (当前值: {{ $value | humanizePercentage }}) - JVM heap memory usage exceeds 85% (current: {{ $value | humanizePercentage }})"
+
+      # 高请求率 - High request rate
+      - alert: HighRequestRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count[1m])) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          component: backend
+        annotations:
+          summary: "高请求率检测 - High request rate detected"
+          description: "请求率超过 1000 req/s (当前值: {{ $value }}) - Request rate exceeds 1000 req/s (current: {{ $value }})"
+
+  # 数据库告警组 - Database alerts group
+  - name: database_alerts
+    interval: 30s
+    rules:
+      # 数据库连接数高 - High database connections
+      - alert: HighDatabaseConnections
+        expr: |
+          mysql_global_status_threads_connected > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "数据库连接数高 - High database connections"
+          description: "MySQL 连接数超过 80 (当前值: {{ $value }}) - MySQL connections exceed 80 (current: {{ $value }})"
+
+      # 数据库不可用 - Database down
+      - alert: DatabaseDown
+        expr: up{job="mysql"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "数据库服务宕机 - Database service is down"
+          description: "MySQL 数据库已宕机超过 1 分钟 - MySQL database has been down for more than 1 minute"
+
+      # 慢查询率高 - High slow query rate
+      - alert: HighSlowQueryRate
+        expr: |
+          rate(mysql_global_status_slow_queries[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "慢查询率高 - High slow query rate"
+          description: "MySQL 慢查询率超过 10 queries/s (当前值: {{ $value }}) - MySQL slow query rate exceeds 10 queries/s (current: {{ $value }})"
+
+  # 基础设施告警组 - Infrastructure alerts group
+  - name: infrastructure_alerts
+    interval: 30s
+    rules:
+      # 容器重启告警 - Container restart alert
+      - alert: ContainerRestarted
+        expr: |
+          rate(container_last_seen[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "容器重启检测 - Container restart detected"
+          description: "容器 {{ $labels.name }} 已重启 - Container {{ $labels.name }} has restarted"
+
+      # 高 CPU 使用率 - High CPU usage
+      - alert: HighCPUUsage
+        expr: |
+          (
+            sum(rate(container_cpu_usage_seconds_total[5m])) by (name) 
+            / 
+            sum(container_spec_cpu_quota / container_spec_cpu_period) by (name)
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "容器 CPU 使用率高 - High container CPU usage"
+          description: "容器 {{ $labels.name }} CPU 使用率超过 85% (当前值: {{ $value | humanizePercentage }}) - Container {{ $labels.name }} CPU usage exceeds 85% (current: {{ $value | humanizePercentage }})"
+
+      # 高内存使用率 - High memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            container_memory_usage_bytes 
+            / 
+            container_spec_memory_limit_bytes
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "容器内存使用率高 - High container memory usage"
+          description: "容器 {{ $labels.name }} 内存使用率超过 85% (当前值: {{ $value | humanizePercentage }}) - Container {{ $labels.name }} memory usage exceeds 85% (current: {{ $value | humanizePercentage }})"
+
+      # 磁盘空间不足 - Low disk space
+      - alert: LowDiskSpace
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/"} 
+            / 
+            node_filesystem_size_bytes{mountpoint="/"}
+          ) < 0.10
+        for: 5m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "磁盘空间不足 - Low disk space"
+          description: "可用磁盘空间低于 10% (当前值: {{ $value | humanizePercentage }}) - Available disk space below 10% (current: {{ $value | humanizePercentage }})"

@@ -1,0 +1,89 @@
+# Prometheus 配置文件
+# Prometheus Configuration File
+# 用于监控 E-commerce 系统的所有服务
+# For monitoring all services in the E-commerce system
+
+global:
+  # 数据抓取间隔 - Scrape interval
+  scrape_interval: 15s
+  # 评估规则间隔 - Evaluation interval for rules
+  evaluation_interval: 15s
+  # 外部标签 - External labels
+  external_labels:
+    monitor: 'ecommerce-monitor'
+    environment: 'production'
+
+# 告警管理器配置 - Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# 加载告警规则 - Load alerting rules
+rule_files:
+  - '/etc/prometheus/alerts/*.yml'
+
+# 抓取配置 - Scrape configurations
+scrape_configs:
+  # Prometheus 自身监控 - Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          tier: 'monitoring'
+
+  # Spring Boot 后端服务 - Spring Boot backend service
+  - job_name: 'backend'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['backend:8080']
+        labels:
+          service: 'backend'
+          tier: 'application'
+          application: 'ecommerce-api'
+    # 健康检查 - Health check
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'ecommerce-backend'
+
+  # MySQL 数据库导出器 - MySQL database exporter
+  - job_name: 'mysql'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['mysql-exporter:9104']
+        labels:
+          service: 'mysql'
+          tier: 'database'
+          database: 'ecommerce'
+
+  # Nginx 前端服务导出器 - Nginx frontend exporter
+  - job_name: 'nginx'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+        labels:
+          service: 'nginx'
+          tier: 'frontend'
+          application: 'ecommerce-web'
+
+  # Node Exporter - 系统指标 - System metrics
+  - job_name: 'node'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+          tier: 'infrastructure'
+
+  # cAdvisor - 容器指标 - Container metrics
+  - job_name: 'cadvisor'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'cadvisor'
+          tier: 'infrastructure'

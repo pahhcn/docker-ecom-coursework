@@ -1,0 +1,320 @@
+# Docker Compose 配置文件 - 包含监控栈
+# Docker Compose Configuration - With Monitoring Stack
+# 用于部署完整的 E-commerce 系统和监控服务
+# For deploying complete E-commerce system with monitoring services
+
+version: '3.8'
+
+services:
+  # ==================== 应用服务 Application Services ====================
+  
+  # 数据库服务 - MySQL 8.0 / Database Service - MySQL 8.0
+  database:
+    image: mysql:8.0
+    container_name: ecommerce-database
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "3306:3306"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    command: 
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+00:00
+      - --max-connections=100
+
+  # 后端 API 服务 - Spring Boot / Backend API Service - Spring Boot
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ecommerce-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+    ports:
+      - "8080:8080"
+    networks:
+      - ecommerce-network
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # 前端服务 - Nginx / Frontend Service - Nginx
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ecommerce-frontend
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    networks:
+      - ecommerce-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # ==================== 监控服务 Monitoring Services ====================
+
+  # Prometheus - 指标收集和存储 / Metrics Collection and Storage
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ecommerce-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts:/etc/prometheus/alerts:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - ecommerce-network
+    depends_on:
+      - backend
+      - database
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  # Grafana - 可视化仪表板 / Visualization Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ecommerce-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_INSTALL_PLUGINS=
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - ecommerce-network
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # Alertmanager - 告警管理 / Alert Management
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: ecommerce-alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+  # MySQL Exporter - MySQL 指标导出器 / MySQL Metrics Exporter
+  mysql-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: ecommerce-mysql-exporter
+    restart: unless-stopped
+    environment:
+      - DATA_SOURCE_NAME=${DB_USER}:${DB_PASSWORD}@(database:3306)/
+    ports:
+      - "9104:9104"
+    networks:
+      - ecommerce-network
+    depends_on:
+      database:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+  # Nginx Exporter - Nginx 指标导出器 / Nginx Metrics Exporter
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: ecommerce-nginx-exporter
+    restart: unless-stopped
+    command:
+      - '-nginx.scrape-uri=http://frontend:80/stub_status'
+    ports:
+      - "9113:9113"
+    networks:
+      - ecommerce-network
+    depends_on:
+      - frontend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 64M
+
+  # Node Exporter - 系统指标导出器 / System Metrics Exporter
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: ecommerce-node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - "9100:9100"
+    networks:
+      - ecommerce-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+  # cAdvisor - 容器指标导出器 / Container Metrics Exporter
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: ecommerce-cadvisor
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "8082:8080"
+    networks:
+      - ecommerce-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+# 自定义网络 - 用于服务通信 / Custom network for service communication
+networks:
+  ecommerce-network:
+    driver: bridge
+    name: ecommerce-network
+
+# 命名卷 - 用于数据持久化 / Named volumes for data persistence
+volumes:
+  mysql-data:
+    name: mysql-data
+    driver: local
+  prometheus-data:
+    name: prometheus-data
+    driver: local
+  grafana-data:
+    name: grafana-data
+    driver: local
+  alertmanager-data:
+    name: alertmanager-data
+    driver: local
