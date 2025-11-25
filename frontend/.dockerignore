@@ -1,0 +1,25 @@
+# Ignore version control
+.git
+.gitignore
+
+# Ignore documentation
+README.md
+*.md
+
+# Ignore IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore logs
+*.log
+
+# Ignore temporary files
+*.tmp
+*.temp

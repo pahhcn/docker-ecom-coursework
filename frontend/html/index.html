@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-commerce Product Catalog</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Product Catalog</h1>
+            <p>Browse our collection of products</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading products...</p>
+        </div>
+
+        <div id="error" class="error hidden">
+            <p class="error-message"></p>
+            <button onclick="location.reload()">Retry</button>
+        </div>
+
+        <div id="product-grid" class="product-grid">
+            <!-- Products will be dynamically loaded here -->
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 E-commerce System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header */
+header {
+    background-color: #2c3e50;
+    color: white;
+    padding: 2rem 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+header p {
+    color: #ecf0f1;
+    font-size: 1rem;
+}
+
+.back-link {
+    display: inline-block;
+    color: #3498db;
+    text-decoration: none;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    transition: color 0.3s;
+}
+
+.back-link:hover {
+    color: #2980b9;
+}
+
+/* Main Content */
+main {
+    padding: 2rem 0;
+    min-height: calc(100vh - 200px);
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 4rem 0;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+}
+
+/* Error State */
+.error {
+    background-color: #fee;
+    border: 1px solid #fcc;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.error-message {
+    color: #c0392b;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.error button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+
+.error button:hover {
+    background-color: #2980b9;
+}
+
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+/* Product Grid */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+/* Product Card */
+.product-card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.product-card-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background-color: #ecf0f1;
+}
+
+.product-card-content {
+    padding: 1.5rem;
+}
+
+.product-card-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.product-card-category {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.product-card-description {
+    color: #555;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.product-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid #ecf0f1;
+}
+
+.product-card-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #27ae60;
+}
+
+.product-card-stock {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.product-card-stock.in-stock {
+    color: #27ae60;
+}
+
+.product-card-stock.low-stock {
+    color: #f39c12;
+}
+
+.product-card-stock.out-of-stock {
+    color: #c0392b;
+}
+
+/* Product Detail Page */
+.product-detail {
+    background: white;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-top: 2rem;
+}
+
+.product-image-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ecf0f1;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.product-image {
+    width: 100%;
+    height: auto;
+    max-height: 500px;
+    object-fit: cover;
+}
+
+.product-info h2 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.product-category {
+    color: #7f8c8d;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1rem;
+}
+
+.product-price {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #27ae60;
+    margin-bottom: 1rem;
+}
+
+.product-stock {
+    margin-bottom: 1.5rem;
+    padding: 0.75rem;
+    background-color: #ecf0f1;
+    border-radius: 4px;
+}
+
+.product-stock span {
+    font-weight: 600;
+}
+
+.product-description {
+    margin-bottom: 2rem;
+}
+
+.product-description h3 {
+    font-size: 1.25rem;
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+}
+
+.product-description p {
+    color: #555;
+    line-height: 1.8;
+}
+
+.product-meta {
+    padding-top: 1.5rem;
+    border-top: 1px solid #ecf0f1;
+}
+
+.product-meta p {
+    color: #7f8c8d;
+    margin-bottom: 0.5rem;
+}
+
+.product-meta strong {
+    color: #2c3e50;
+}
+
+/* Footer */
+footer {
+    background-color: #2c3e50;
+    color: white;
+    text-align: center;
+    padding: 2rem 0;
+    margin-top: 4rem;
+}
+
+footer p {
+    color: #ecf0f1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .product-detail {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 1.5rem;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .product-info h2 {
+        font-size: 1.5rem;
+    }
+
+    .product-price {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .product-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .container {
+        padding: 0 15px;
+    }
+}

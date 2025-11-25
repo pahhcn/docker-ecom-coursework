@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="index.html" class="back-link">&larr; Back to Products</a>
+            <h1>Product Details</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Loading product details...</p>
+        </div>
+
+        <div id="error" class="error hidden">
+            <p class="error-message"></p>
+            <button onclick="window.location.href='index.html'">Back to Products</button>
+        </div>
+
+        <div id="product-detail" class="product-detail hidden">
+            <div class="product-image-container">
+                <img id="product-image" src="" alt="Product Image" class="product-image">
+            </div>
+            <div class="product-info">
+                <h2 id="product-name"></h2>
+                <p class="product-category" id="product-category"></p>
+                <p class="product-price" id="product-price"></p>
+                <div class="product-stock">
+                    <span id="product-stock"></span>
+                </div>
+                <div class="product-description">
+                    <h3>Description</h3>
+                    <p id="product-description"></p>
+                </div>
+                <div class="product-meta">
+                    <p><strong>Product ID:</strong> <span id="product-id"></span></p>
+                    <p><strong>Created:</strong> <span id="product-created"></span></p>
+                    <p><strong>Last Updated:</strong> <span id="product-updated"></span></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 E-commerce System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
