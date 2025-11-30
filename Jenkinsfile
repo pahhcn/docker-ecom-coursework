@@ -67,22 +67,14 @@ pipeline {
                 echo '========================================='
                 echo '🧪 运行单元测试'
                 echo '========================================='
-                script {
-                    def testResult = sh(
-                        script: '''
-                            docker run --rm \
-                              -v ${HOST_WORKSPACE}/backend:/app \
-                              -v $HOME/.m2:/root/.m2 \
-                              -w /app \
-                              maven:3.9-eclipse-temurin-17 \
-                              mvn test -Dtest=*ServiceTest || true
-                        ''',
-                        returnStatus: true
-                    )
-                    if (testResult != 0) {
-                        echo "⚠️ 部分单元测试失败，但继续执行流水线"
-                    }
-                }
+                sh '''
+                    docker run --rm \
+                      -v ${HOST_WORKSPACE}/backend:/app \
+                      -v $HOME/.m2:/root/.m2 \
+                      -w /app \
+                      maven:3.9-eclipse-temurin-17 \
+                      mvn test -Dtest=*ServiceTest
+                '''
             }
             post {
                 always {
@@ -97,23 +89,15 @@ pipeline {
                 echo '========================================='
                 echo '🔗 运行集成测试'
                 echo '========================================='
-                script {
-                    // 运行属性测试，允许失败
-                    def testResult = sh(
-                        script: '''
-                            docker run --rm \
-                              -v ${HOST_WORKSPACE}/backend:/app \
-                              -v $HOME/.m2:/root/.m2 \
-                              -w /app \
-                              maven:3.9-eclipse-temurin-17 \
-                              mvn test -Dtest=*PropertyTest || true
-                        ''',
-                        returnStatus: true
-                    )
-                    if (testResult != 0) {
-                        echo "⚠️ 部分集成测试失败，但继续执行流水线"
-                    }
-                }
+                sh '''
+                    # 运行属性测试
+                    docker run --rm \
+                      -v ${HOST_WORKSPACE}/backend:/app \
+                      -v $HOME/.m2:/root/.m2 \
+                      -w /app \
+                      maven:3.9-eclipse-temurin-17 \
+                      mvn test -Dtest=*PropertyTest
+                '''
             }
             post {
                 always {

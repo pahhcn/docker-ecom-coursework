@@ -20,11 +20,17 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+
 /**
  * Property-based tests for end-to-end data flow integrity
  * Feature: docker-ecommerce-system, Property 6: End-to-end data flow integrity
  * Validates: Requirements 6.3
+ * 
+ * Note: This test requires Docker and the backend image to be built.
+ * Set ENABLE_E2E_TESTS=true to run these tests.
  */
+@EnabledIfEnvironmentVariable(named = "ENABLE_E2E_TESTS", matches = "true")
 public class EndToEndDataFlowPropertyTest extends PropertyTestBase {
     
     private static Network network;
@@ -36,6 +42,9 @@ public class EndToEndDataFlowPropertyTest extends PropertyTestBase {
     
     @BeforeAll
     static void setupContainers() {
+        // Initialize ObjectMapper first
+        objectMapper = new ObjectMapper();
+        
         // Create a shared network for all containers
         network = Network.newNetwork();
         
