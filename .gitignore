@@ -42,6 +42,7 @@ data/
 credentials/
 keys/
 secrets/
+jenkins_home/
 
 # Node modules (if using npm for frontend tooling)
 node_modules/
@@ -58,3 +59,4 @@ coverage/
 # Temporary files
 tmp/
 temp/
+jenkins_home/
