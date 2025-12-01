@@ -1,50 +1,50 @@
-# Multi-stage Dockerfile for Spring Boot Backend
-# Stage 1: Build stage using Maven
+# Spring Boot后端多阶段Dockerfile
+# 第一阶段：使用Maven进行构建
 FROM maven:3.9-eclipse-temurin-17 AS build
 
-# Set working directory
+# 设置工作目录
 WORKDIR /app
 
-# Copy pom.xml first to leverage Docker layer caching
-# Dependencies will only be re-downloaded if pom.xml changes
+# 首先复制pom.xml以利用Docker层缓存
+# 只有pom.xml更改时才会重新下载依赖
 COPY pom.xml .
 
-# Download dependencies (this layer will be cached)
+# 下载依赖（这一层会被缓存）
 RUN mvn dependency:go-offline -B
 
-# Copy source code
+# 复制源代码
 COPY src ./src
 
-# Build the application (skip tests for faster builds)
+# 构建应用（跳过测试以加快构建速度）
 RUN mvn clean package -DskipTests -B
 
-# Stage 2: Runtime stage using lightweight JRE
+# 第二阶段：使用轻量级JRE的运行时阶段
 FROM eclipse-temurin:17-jre-alpine
 
-# Set working directory
+# 设置工作目录
 WORKDIR /app
 
-# Create a non-root user for security
+# 创建非root用户以提高安全性
 RUN addgroup -S spring && adduser -S spring -G spring
 
-# Copy the JAR from build stage
+# 从构建阶段复制JAR文件
 COPY --from=build /app/target/*.jar app.jar
 
-# Change ownership to non-root user
+# 更改文件所有权为非root用户
 RUN chown spring:spring app.jar
 
-# Switch to non-root user
+# 切换到非root用户
 USER spring:spring
 
-# Expose the application port
+# 暴露应用端口
 EXPOSE 8080
 
-# Configure health check
+# 配置健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
-# Set JVM options for containerized environment
+# 为容器化环境设置JVM选项
 ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
-# Run the application
+# 运行应用
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

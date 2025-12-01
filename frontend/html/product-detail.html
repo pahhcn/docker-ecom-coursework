@@ -1,33 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Details</title>
+    <title>产品详情</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <header>
         <div class="container">
-            <a href="index.html" class="back-link">&larr; Back to Products</a>
-            <h1>Product Details</h1>
+            <a href="index.html" class="back-link">&larr; 返回产品列表</a>
+            <h1>产品详情</h1>
         </div>
     </header>
 
     <main class="container">
         <div id="loading" class="loading">
             <div class="spinner"></div>
-            <p>Loading product details...</p>
+            <p>正在加载产品详情...</p>
         </div>
 
         <div id="error" class="error hidden">
             <p class="error-message"></p>
-            <button onclick="window.location.href='index.html'">Back to Products</button>
+            <button onclick="window.location.href='index.html'">返回产品列表</button>
         </div>
 
         <div id="product-detail" class="product-detail hidden">
             <div class="product-image-container">
-                <img id="product-image" src="" alt="Product Image" class="product-image">
+                <img id="product-image" src="" alt="产品图片" class="product-image">
             </div>
             <div class="product-info">
                 <h2 id="product-name"></h2>
@@ -37,13 +37,17 @@
                     <span id="product-stock"></span>
                 </div>
                 <div class="product-description">
-                    <h3>Description</h3>
+                    <h3>产品描述</h3>
                     <p id="product-description"></p>
                 </div>
                 <div class="product-meta">
-                    <p><strong>Product ID:</strong> <span id="product-id"></span></p>
-                    <p><strong>Created:</strong> <span id="product-created"></span></p>
-                    <p><strong>Last Updated:</strong> <span id="product-updated"></span></p>
+                    <p><strong>产品编号：</strong> <span id="product-id"></span></p>
+                    <p><strong>创建时间：</strong> <span id="product-created"></span></p>
+                    <p><strong>更新时间：</strong> <span id="product-updated"></span></p>
+                </div>
+                
+                <div class="product-actions">
+                    <a href="admin.html" class="btn btn-primary">管理所有产品</a>
                 </div>
             </div>
         </div>
@@ -51,7 +55,7 @@
 
     <footer>
         <div class="container">
-            <p>&copy; 2025 E-commerce System. All rights reserved.</p>
+            <p>&copy; 2025 电商系统。保留所有权利。</p>
         </div>
     </footer>
 

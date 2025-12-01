@@ -1,14 +1,12 @@
 # Docker Compose 配置文件 - 包含监控栈
-# Docker Compose Configuration - With Monitoring Stack
 # 用于部署完整的 E-commerce 系统和监控服务
-# For deploying complete E-commerce system with monitoring services
 
 version: '3.8'
 
 services:
   # ==================== 应用服务 Application Services ====================
   
-  # 数据库服务 - MySQL 8.0 / Database Service - MySQL 8.0
+  # 数据库服务 - MySQL 8.0
   database:
     image: mysql:8.0
     container_name: ecommerce-database
@@ -48,7 +46,7 @@ services:
       - --default-time-zone=+00:00
       - --max-connections=100
 
-  # 后端 API 服务 - Spring Boot / Backend API Service - Spring Boot
+  # 后端 API 服务 - Spring Boot
   backend:
     build:
       context: ./backend
@@ -86,7 +84,7 @@ services:
           cpus: '0.5'
           memory: 256M
 
-  # 前端服务 - Nginx / Frontend Service - Nginx
+  # 前端服务 - Nginx
   frontend:
     build:
       context: ./frontend
@@ -117,7 +115,7 @@ services:
 
   # ==================== 监控服务 Monitoring Services ====================
 
-  # Prometheus - 指标收集和存储 / Metrics Collection and Storage
+  # Prometheus - 指标收集和存储
   prometheus:
     image: prom/prometheus:latest
     container_name: ecommerce-prometheus
@@ -152,7 +150,7 @@ services:
           cpus: '0.5'
           memory: 512M
 
-  # Grafana - 可视化仪表板 / Visualization Dashboard
+  # Grafana - 可视化仪表板
   grafana:
     image: grafana/grafana:latest
     container_name: ecommerce-grafana
@@ -186,7 +184,7 @@ services:
           cpus: '0.5'
           memory: 256M
 
-  # Alertmanager - 告警管理 / Alert Management
+  # Alertmanager - 告警管理
   alertmanager:
     image: prom/alertmanager:latest
     container_name: ecommerce-alertmanager
@@ -213,7 +211,7 @@ services:
           cpus: '0.25'
           memory: 128M
 
-  # MySQL Exporter - MySQL 指标导出器 / MySQL Metrics Exporter
+  # MySQL Exporter - MySQL 指标导出器
   mysql-exporter:
     image: prom/mysqld-exporter:latest
     container_name: ecommerce-mysql-exporter
@@ -233,7 +231,7 @@ services:
           cpus: '0.25'
           memory: 128M
 
-  # Nginx Exporter - Nginx 指标导出器 / Nginx Metrics Exporter
+  # Nginx Exporter - Nginx 指标导出器
   nginx-exporter:
     image: nginx/nginx-prometheus-exporter:latest
     container_name: ecommerce-nginx-exporter
@@ -252,7 +250,7 @@ services:
           cpus: '0.25'
           memory: 64M
 
-  # Node Exporter - 系统指标导出器 / System Metrics Exporter
+  # Node Exporter - 系统指标导出器
   node-exporter:
     image: prom/node-exporter:latest
     container_name: ecommerce-node-exporter
@@ -276,7 +274,7 @@ services:
           cpus: '0.25'
           memory: 128M
 
-  # cAdvisor - 容器指标导出器 / Container Metrics Exporter
+  # cAdvisor - 容器指标导出器
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: ecommerce-cadvisor

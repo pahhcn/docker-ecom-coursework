@@ -23,7 +23,7 @@ public class ProductController {
     }
     
     /**
-     * GET /api/products - Get all products
+     * GET /api/products - 获取所有产品
      */
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
@@ -32,7 +32,7 @@ public class ProductController {
     }
     
     /**
-     * GET /api/products/{id} - Get product by ID
+     * GET /api/products/{id} - 根据ID获取产品
      */
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
@@ -42,7 +42,7 @@ public class ProductController {
     }
     
     /**
-     * POST /api/products - Create new product
+     * POST /api/products - 创建新产品
      */
     @PostMapping
     public ResponseEntity<Product> createProduct(@Valid @RequestBody Product product) {
@@ -51,7 +51,7 @@ public class ProductController {
     }
     
     /**
-     * PUT /api/products/{id} - Update product
+     * PUT /api/products/{id} - 更新产品
      */
     @PutMapping("/{id}")
     public ResponseEntity<Product> updateProduct(
@@ -63,7 +63,7 @@ public class ProductController {
     }
     
     /**
-     * DELETE /api/products/{id} - Delete product
+     * DELETE /api/products/{id} - 删除产品
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {

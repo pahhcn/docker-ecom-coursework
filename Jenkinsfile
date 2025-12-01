@@ -118,23 +118,11 @@ pipeline {
                         echo "构建后端应用..."
                         echo "工作空间路径: ${WORKSPACE}"
                         
-                        # 在 Jenkins 工作空间内直接构建（不使用 Docker）
                         cd ${WORKSPACE}/backend
                         
-                        # 检查 Maven 是否可用
-                        if command -v mvn &> /dev/null; then
-                            echo "使用本地 Maven 构建..."
-                            mvn clean package -DskipTests
-                        else
-                            echo "本地 Maven 不可用，使用 Docker Maven..."
-                            # 使用 Docker 但挂载当前目录
-                            docker run --rm \
-                              -v \$(pwd):/app \
-                              -v /root/.m2:/root/.m2 \
-                              -w /app \
-                              maven:3.9-eclipse-temurin-17 \
-                              mvn clean package -DskipTests
-                        fi
+                        echo "使用本地 Maven 构建..."
+                        mvn -version
+                        mvn clean package -DskipTests
                     """
                     
                     // 构建Docker镜像
@@ -163,17 +151,7 @@ pipeline {
                 echo '========================================='
                 sh """
                     cd ${WORKSPACE}/backend
-                    
-                    if command -v mvn &> /dev/null; then
-                        mvn test -Dtest=*ServiceTest
-                    else
-                        docker run --rm \
-                          -v \$(pwd):/app \
-                          -v /root/.m2:/root/.m2 \
-                          -w /app \
-                          maven:3.9-eclipse-temurin-17 \
-                          mvn test -Dtest=*ServiceTest
-                    fi
+                    mvn test -Dtest=*ServiceTest
                 """
             }
             post {
@@ -195,16 +173,7 @@ pipeline {
                     cd ${WORKSPACE}/backend
                     
                     # 只运行不需要Docker的属性测试
-                    if command -v mvn &> /dev/null; then
-                        mvn test -Dtest=Product*PropertyTest
-                    else
-                        docker run --rm \
-                          -v \$(pwd):/app \
-                          -v /root/.m2:/root/.m2 \
-                          -w /app \
-                          maven:3.9-eclipse-temurin-17 \
-                          mvn test -Dtest=Product*PropertyTest
-                    fi
+                    mvn test -Dtest=Product*PropertyTest
                 """
             }
             post {
@@ -268,17 +237,7 @@ pipeline {
                 echo '========================================='
                 sh """
                     cd ${WORKSPACE}/backend
-                    
-                    if command -v mvn &> /dev/null; then
-                        mvn jacoco:report
-                    else
-                        docker run --rm \
-                          -v \$(pwd):/app \
-                          -v /root/.m2:/root/.m2 \
-                          -w /app \
-                          maven:3.9-eclipse-temurin-17 \
-                          mvn jacoco:report
-                    fi
+                    mvn jacoco:report
                     
                     echo ""
                     echo "✅ 覆盖率报告已生成"
@@ -449,7 +408,11 @@ pipeline {
                             kubectl apply -f /workspace/monitoring/grafana/ -n monitoring || echo "⚠️ Grafana 配置不存在"
                         fi
                         
-                        echo ""
+                        # 部署 Alertmanager（如果配置存在）
+                        if [ -d "/workspace/monitoring/alertmanager" ]; then
+                            echo "部署 Alertmanager..."
+                            kubectl apply -f /workspace/monitoring/alertmanager/ -n monitoring || echo "⚠️ Alertmanager 配置不存在"
+                        fi
                         echo "✅ 监控系统部署完成"
                         echo "📊 查看监控服务:"
                         kubectl get all -n monitoring || echo "⚠️ 监控服务未配置"
@@ -458,6 +421,7 @@ pipeline {
                         echo "💡 访问监控服务需要端口转发:"
                         echo "   kubectl port-forward -n monitoring service/grafana 3000:3000"
                         echo "   kubectl port-forward -n monitoring service/prometheus 9090:9090"
+                        echo "   kubectl port-forward -n monitoring service/alertmanager 9093:9093"
                     '''
                 }
             }
@@ -522,6 +486,7 @@ pipeline {
                       查看服务: kubectl get all -n monitoring
                       访问 Grafana: kubectl port-forward -n monitoring service/grafana 3000:3000
                       访问 Prometheus: kubectl port-forward -n monitoring service/prometheus 9090:9090
+                      访问 Alertmanager: kubectl port-forward -n monitoring service/alertmanager 9093:9093
                     """
                 }
                 

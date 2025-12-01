@@ -8,7 +8,7 @@ metadata:
 spec:
   selector:
     app: backend
-    version: blue  # Change this to 'green' to switch traffic
+    version: blue  # 将此更改为'green'以切换流量
   ports:
   - port: 8080
     targetPort: 8080

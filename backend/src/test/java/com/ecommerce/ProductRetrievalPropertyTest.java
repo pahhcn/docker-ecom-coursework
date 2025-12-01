@@ -26,7 +26,7 @@ public class ProductRetrievalPropertyTest extends PropertyTestBase {
     private ProductRepository productRepository;
     
     @Property(tries = 100)
-    @Label("For any set of products stored in database, GET /api/products returns all products with no omissions or duplicates")
+    @Label("对于数据库中存储的任何产品集，GET /api/products 应返回所有产品，无遗漏或重复")
     void productRetrievalCompleteness(@ForAll("productSets") List<Product> productsToStore) {
         // Clean database before test
         productRepository.deleteAll();
@@ -43,25 +43,25 @@ public class ProductRetrievalPropertyTest extends PropertyTestBase {
         
         // Verify: Same number of products
         assert retrievedProducts.size() == storedProducts.size() : 
-            String.format("Expected %d products but got %d", storedProducts.size(), retrievedProducts.size());
+            String.format("期望 %d 个产品但得到 %d 个", storedProducts.size(), retrievedProducts.size());
         
         // Verify: No duplicates in retrieved products
         Set<Long> retrievedIds = new HashSet<>();
         for (Product p : retrievedProducts) {
             boolean added = retrievedIds.add(p.getId());
-            assert added : "Duplicate product ID found: " + p.getId();
+            assert added : "检索到的产品发现重复ID: " + p.getId();
         }
         
         // Verify: All stored products are retrieved
         for (Long storedId : storedIds) {
             assert retrievedIds.contains(storedId) : 
-                "Stored product with ID " + storedId + " was not retrieved";
+                "存储的产品ID " + storedId + " 未被检索到";
         }
         
         // Verify: No extra products retrieved
         for (Long retrievedId : retrievedIds) {
             assert storedIds.contains(retrievedId) : 
-                "Retrieved product with ID " + retrievedId + " was not stored";
+                "检索到的产品ID " + retrievedId + " 未被存储";
         }
         
         // Verify: Data integrity - check that product data matches
@@ -72,11 +72,11 @@ public class ProductRetrievalPropertyTest extends PropertyTestBase {
                     .orElseThrow();
             
             assert stored.getName().equals(retrieved.getName()) : 
-                "Product name mismatch for ID " + stored.getId();
+                "产品名称不匹配，ID为 " + stored.getId();
             assert stored.getPrice().compareTo(retrieved.getPrice()) == 0 : 
-                "Product price mismatch for ID " + stored.getId();
+                "产品价格不匹配，ID为 " + stored.getId();
             assert stored.getStockQuantity().equals(retrieved.getStockQuantity()) : 
-                "Product stock quantity mismatch for ID " + stored.getId();
+                "产品库存数量不匹配，ID为 " + stored.getId();
         }
     }
     

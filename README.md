@@ -79,31 +79,26 @@
 
 ```bash
 # 1. 克隆仓库
-git clone <repository-url>
+git clone https://github.com/pahhcn/docker-ecom-coursework.git
 cd docker-ecom-coursework
 
 # 2. 启动所有服务
 docker-compose up --build
 
 # 3. 访问应用
-# 前端: http://localhost:80
+# 前端: http://localhost:8082
 # 后端 API: http://localhost:8080/api/products
 ```
 
 ### 方式二: Kubernetes + Jenkins (生产环境)
 
 ```bash
-# 1. 启动 Minikube
+# 1. 安装并启动 Minikube
 minikube start
 
-# 2. 设置 Docker Registry (可选)
-./ci/setup-docker-registry.sh
+# 2. 启动 Jenkins会自动配置kube环境
+./run-jenkins-local.sh
 
-# 3. 启动 Jenkins
-./ci/run-jenkins-local.sh
-
-# 4. 配置 Jenkins 访问 Kubernetes
-./ci/setup-jenkins-k8s.sh
 
 # 5. 访问 Jenkins
 # 打开 http://localhost:8090

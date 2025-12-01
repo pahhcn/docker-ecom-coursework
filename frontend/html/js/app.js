@@ -101,8 +101,8 @@ async function fetchProducts() {
         const products = await response.json();
         return products;
     } catch (error) {
-        console.error('Error fetching products:', error);
-        throw new Error(`Failed to load products: ${error.message}`);
+        console.error('获取产品列表出错:', error);
+        throw new Error(`加载产品失败：${error.message}`);
     }
 }
 
@@ -112,22 +112,22 @@ async function fetchProductById(id) {
         const product = await response.json();
         return product;
     } catch (error) {
-        console.error(`Error fetching product ${id}:`, error);
-        throw new Error(`Failed to load product details: ${error.message}`);
+        console.error(`获取产品 ${id} 出错:`, error);
+        throw new Error(`加载产品详情失败：${error.message}`);
     }
 }
 
 // Formatting Functions
 function formatPrice(price) {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('zh-CN', {
         style: 'currency',
-        currency: 'USD'
+        currency: 'CNY'
     }).format(price);
 }
 
 function formatDate(dateString) {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat('zh-CN', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -138,11 +138,11 @@ function formatDate(dateString) {
 
 function getStockStatus(quantity) {
     if (quantity === 0) {
-        return { text: 'Out of Stock', class: 'out-of-stock' };
+        return { text: '缺货', class: 'out-of-stock' };
     } else if (quantity < 10) {
-        return { text: `Low Stock (${quantity} remaining)`, class: 'low-stock' };
+        return { text: `库存不足（剩余 ${quantity} 件）`, class: 'low-stock' };
     } else {
-        return { text: `In Stock (${quantity} available)`, class: 'in-stock' };
+        return { text: `有货（${quantity} 件可用）`, class: 'in-stock' };
     }
 }
 
@@ -159,14 +159,14 @@ function createProductCard(product) {
     card.onclick = () => navigateToProduct(product.id);
 
     const stockStatus = getStockStatus(product.stockQuantity);
-    const imageUrl = product.imageUrl || 'https://via.placeholder.com/280x200?text=No+Image';
-    const description = product.description || 'No description available';
+    const imageUrl = product.imageUrl || 'https://via.placeholder.com/280x200?text=暂无图片';
+    const description = product.description || '暂无描述';
 
     card.innerHTML = `
-        <img src="${imageUrl}" alt="${product.name}" class="product-card-image" onerror="this.src='https://via.placeholder.com/280x200?text=No+Image'">
+        <img src="${imageUrl}" alt="${product.name}" class="product-card-image" onerror="this.src='https://via.placeholder.com/280x200?text=暂无图片'">
         <div class="product-card-content">
             <h3 class="product-card-name">${escapeHtml(product.name)}</h3>
-            <p class="product-card-category">${escapeHtml(product.category || 'Uncategorized')}</p>
+            <p class="product-card-category">${escapeHtml(product.category || '未分类')}</p>
             <p class="product-card-description">${escapeHtml(truncateText(description, 100))}</p>
             <div class="product-card-footer">
                 <span class="product-card-price">${formatPrice(product.price)}</span>
@@ -195,7 +195,7 @@ async function loadProducts() {
         const products = await fetchProducts();
         
         if (!products || products.length === 0) {
-            showError('No products available at the moment.');
+            showError('暂无可用产品。');
             return;
         }
 
@@ -217,9 +217,9 @@ async function loadProducts() {
 function displayProductDetail(product) {
     document.getElementById('product-id').textContent = product.id;
     document.getElementById('product-name').textContent = product.name;
-    document.getElementById('product-category').textContent = product.category || 'Uncategorized';
+    document.getElementById('product-category').textContent = product.category || '未分类';
     document.getElementById('product-price').textContent = formatPrice(product.price);
-    document.getElementById('product-description').textContent = product.description || 'No description available';
+    document.getElementById('product-description').textContent = product.description || '暂无描述';
     document.getElementById('product-created').textContent = formatDate(product.createdAt);
     document.getElementById('product-updated').textContent = formatDate(product.updatedAt);
 
@@ -229,10 +229,10 @@ function displayProductDetail(product) {
     stockElement.className = stockStatus.class;
 
     const imageElement = document.getElementById('product-image');
-    imageElement.src = product.imageUrl || 'https://via.placeholder.com/500x500?text=No+Image';
+    imageElement.src = product.imageUrl || 'https://via.placeholder.com/500x500?text=暂无图片';
     imageElement.alt = product.name;
     imageElement.onerror = function() {
-        this.src = 'https://via.placeholder.com/500x500?text=No+Image';
+        this.src = 'https://via.placeholder.com/500x500?text=暂无图片';
     };
 
     showContent('product-detail');
@@ -245,7 +245,7 @@ async function loadProductDetail() {
     const productId = urlParams.get('id');
 
     if (!productId) {
-        showError('Product ID not specified. Please return to the product list.');
+        showError('未指定产品编号。请返回产品列表。');
         return;
     }
 

@@ -23,12 +23,12 @@ data:
             root /usr/share/nginx/html;
             index index.html;
 
-            # Serve static files
+            # 提供静态文件服务
             location / {
                 try_files $uri $uri/ /index.html;
             }
 
-            # Proxy API requests to backend
+            # 将API请求代理到后端
             location /api/ {
                 proxy_pass http://backend-service:8080/api/;
                 proxy_set_header Host $host;
@@ -37,7 +37,7 @@ data:
                 proxy_set_header X-Forwarded-Proto $scheme;
             }
 
-            # Health check endpoint
+            # 健康检查端点
             location /health {
                 access_log off;
                 return 200 "healthy\n";

@@ -1,38 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-commerce Product Catalog</title>
+    <title>电商产品目录</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <header>
         <div class="container">
-            <h1>Product Catalog</h1>
-            <p>Browse our collection of products</p>
+            <div class="header-content">
+                <div>
+                    <h1>产品目录</h1>
+                    <p>浏览我们的产品系列</p>
+                </div>
+                <a href="admin.html" class="admin-link">管理产品</a>
+            </div>
         </div>
     </header>
 
     <main class="container">
         <div id="loading" class="loading">
             <div class="spinner"></div>
-            <p>Loading products...</p>
+            <p>正在加载产品...</p>
         </div>
 
         <div id="error" class="error hidden">
             <p class="error-message"></p>
-            <button onclick="location.reload()">Retry</button>
+            <button onclick="location.reload()">重试</button>
         </div>
 
         <div id="product-grid" class="product-grid">
-            <!-- Products will be dynamically loaded here -->
+            <!-- 产品将在此处动态加载 -->
         </div>
     </main>
 
     <footer>
         <div class="container">
-            <p>&copy; 2025 E-commerce System. All rights reserved.</p>
+            <p>&copy; 2025 电商系统。保留所有权利。</p>
         </div>
     </footer>
 
