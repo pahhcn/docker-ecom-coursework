@@ -114,18 +114,17 @@ pipeline {
                 echo '========================================='
                 script {
                     // 构建后端应用
-                    sh '''
+                    sh """
                         echo "构建后端应用..."
-                        WORKSPACE_PATH="${WORKSPACE}"
-                        echo "工作空间路径: ${WORKSPACE_PATH}"
+                        echo "工作空间路径: ${WORKSPACE}"
                         
                         docker run --rm \
-                          -v "${WORKSPACE_PATH}/backend":/app \
+                          -v ${WORKSPACE}/backend:/app \
                           -v /root/.m2:/root/.m2 \
                           -w /app \
                           maven:3.9-eclipse-temurin-17 \
                           mvn clean package -DskipTests
-                    '''
+                    """
                     
                     // 构建Docker镜像
                     sh """
@@ -151,16 +150,14 @@ pipeline {
                 echo '========================================='
                 echo '🧪 运行单元测试'
                 echo '========================================='
-                sh '''
-                    WORKSPACE_PATH="${WORKSPACE}"
-                    
+                sh """
                     docker run --rm \
-                      -v "${WORKSPACE_PATH}/backend":/app \
+                      -v ${WORKSPACE}/backend:/app \
                       -v /root/.m2:/root/.m2 \
                       -w /app \
                       maven:3.9-eclipse-temurin-17 \
                       mvn test -Dtest=*ServiceTest
-                '''
+                """
             }
             post {
                 always {
@@ -177,17 +174,15 @@ pipeline {
                 echo '========================================='
                 echo '🔗 运行集成测试（属性测试）'
                 echo '========================================='
-                sh '''
-                    WORKSPACE_PATH="${WORKSPACE}"
-                    
+                sh """
                     # 只运行不需要Docker的属性测试
                     docker run --rm \
-                      -v "${WORKSPACE_PATH}/backend":/app \
+                      -v ${WORKSPACE}/backend:/app \
                       -v /root/.m2:/root/.m2 \
                       -w /app \
                       maven:3.9-eclipse-temurin-17 \
                       mvn test -Dtest=Product*PropertyTest
-                '''
+                """
             }
             post {
                 always {
@@ -248,11 +243,9 @@ pipeline {
                 echo '========================================='
                 echo '📊 生成代码覆盖率报告'
                 echo '========================================='
-                sh '''
-                    WORKSPACE_PATH="${WORKSPACE}"
-                    
+                sh """
                     docker run --rm \
-                      -v "${WORKSPACE_PATH}/backend":/app \
+                      -v ${WORKSPACE}/backend:/app \
                       -v /root/.m2:/root/.m2 \
                       -w /app \
                       maven:3.9-eclipse-temurin-17 \
@@ -263,10 +256,10 @@ pipeline {
                     echo "📊 报告位置: backend/target/site/jacoco/index.html"
                     
                     # 显示覆盖率摘要
-                    if [ -f "${WORKSPACE_PATH}/backend/target/site/jacoco/index.html" ]; then
+                    if [ -f ${WORKSPACE}/backend/target/site/jacoco/index.html ]; then
                         echo "可以在工作空间中查看完整的覆盖率报告"
                     fi
-                '''
+                """
             }
             post {
                 always {
