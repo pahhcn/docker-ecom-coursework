@@ -141,65 +141,28 @@ kubectl logs -n ecommerce -l version=green --tail=100 -f
 kubectl get service backend-service -n ecommerce -o yaml | grep -A 5 selector
 ```
 
-## Advantages
+## Advantages & Best Practices
 
-1. **Zero Downtime**: Traffic switches atomically
-2. **Easy Rollback**: Simply switch selector back to previous version
-3. **Testing in Production**: Test new version with production data before switching
-4. **Simple Implementation**: Uses standard Kubernetes resources
+**优势**:
+- 零停机部署
+- 快速回滚
+- 生产环境测试
 
-## Disadvantages
-
-1. **Resource Usage**: Requires 2x resources during deployment
-2. **Database Migrations**: Complex when schema changes are involved
-3. **Stateful Services**: Database uses StatefulSet and doesn't participate in blue-green
-
-## Best Practices
-
-1. **Version Tags**: Always use specific version tags, never `latest`
-2. **Health Checks**: Ensure readiness probes are properly configured
-3. **Monitoring**: Watch metrics closely after traffic switch
-4. **Gradual Rollout**: Consider testing with a small percentage first
-5. **Database Compatibility**: Ensure new code works with old schema during transition
-6. **Rollback Plan**: Always have a tested rollback procedure
+**最佳实践**:
+- 确保健康检查配置正确
+- 切换流量后密切监控
+- 保持数据库向后兼容
 
 ## Troubleshooting
 
-### Pods Not Starting
-
 ```bash
+# 查看 Pod 状态
 kubectl describe pod <pod-name> -n ecommerce
 kubectl logs <pod-name> -n ecommerce
-```
 
-### Service Not Routing Traffic
-
-```bash
-# Check service selector
-kubectl get service backend-service -n ecommerce -o yaml
-
-# Check pod labels
-kubectl get pods -n ecommerce --show-labels
-
-# Verify endpoints
-kubectl get endpoints backend-service -n ecommerce
-```
-
-### Traffic Not Switching
-
-```bash
-# Verify service was updated
+# 检查服务选择器
 kubectl get service backend-service -n ecommerce -o yaml | grep version
 
-# Check if pods are ready
-kubectl get pods -n ecommerce -l version=green
+# 验证端点
+kubectl get endpoints backend-service -n ecommerce
 ```
-
-## Requirements Validation
-
-This implementation satisfies the following requirements:
-
-- **Requirement 8.1**: Both blue and green versions run simultaneously ✓
-- **Requirement 8.2**: Traffic switches atomically by updating service selector ✓
-- **Requirement 8.3**: N/A (canary-specific requirement)
-- **Requirement 8.4**: N/A (canary-specific requirement)

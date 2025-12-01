@@ -38,8 +38,6 @@ public class VolumePersistencePropertyTest extends PropertyTestBase {
         // Create a unique volume name for this test run
         volumeName = "test-mysql-data-" + System.currentTimeMillis();
         
-        // Initialize mysqlContainer first to avoid null pointer
-        
         // Start MySQL container with a named volume
         mysqlContainer = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"))
                 .withDatabaseName("ecommerce")

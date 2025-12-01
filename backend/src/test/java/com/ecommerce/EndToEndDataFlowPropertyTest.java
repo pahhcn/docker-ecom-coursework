@@ -42,9 +42,6 @@ public class EndToEndDataFlowPropertyTest extends PropertyTestBase {
     
     @BeforeAll
     static void setupContainers() {
-        // Initialize ObjectMapper first
-        objectMapper = new ObjectMapper();
-        
         // Create a shared network for all containers
         network = Network.newNetwork();
         

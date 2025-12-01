@@ -47,18 +47,21 @@ if docker ps -a | grep -q "jenkins-local"; then
     docker rm jenkins-local 2>/dev/null || true
 fi
 
-echo "🚀 启动Jenkins容器..."
+echo "🚀 启动Jenkins容器（使用 host 网络模式）..."
 echo ""
 
-# 启动Jenkins容器
+# 启动Jenkins容器 - 使用 host 网络模式以访问 minikube
 docker run -d \
   --name jenkins-local \
-  -p 8090:8080 \
-  -p 50000:50000 \
+  --network host \
   -v "$JENKINS_HOME":/var/jenkins_home \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v "$PWD":/workspace \
+  -v ~/.kube:/root/.kube \
+  -v ~/.minikube:/root/.minikube \
+  -v /root/.m2:/root/.m2 \
   --user root \
+  -e JENKINS_OPTS="--httpPort=8090" \
   jenkins/jenkins:lts
 
 echo "⏳ 等待Jenkins启动（约30秒）..."
@@ -66,15 +69,26 @@ sleep 30
 
 echo "🔧 配置Jenkins环境..."
 
-# 后台安装Docker CLI和docker-compose
-docker exec -u root jenkins-local bash -c "apt-get update -qq && apt-get install -y -qq docker.io docker-compose > /dev/null 2>&1" &
+# 后台安装Docker CLI、docker-compose 和 kubectl
+docker exec -u root jenkins-local bash -c "
+    apt-get update -qq && \
+    apt-get install -y -qq docker.io docker-compose curl && \
+    curl -LO https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl && \
+    chmod +x kubectl && \
+    mv kubectl /usr/local/bin/ && \
+    mkdir -p /var/jenkins_home/.kube && \
+    cp -r /root/.kube/* /var/jenkins_home/.kube/ 2>/dev/null || true && \
+    chown -R jenkins:jenkins /var/jenkins_home/.kube
+" > /dev/null 2>&1 &
 INSTALL_PID=$!
 
 # 创建Jenkins Job配置
 echo "📝 创建Pipeline任务配置..."
-mkdir -p "$JENKINS_HOME/jobs/docker-ecom-coursework"
 
-cat > "$JENKINS_HOME/jobs/docker-ecom-coursework/config.xml" << 'EOF'
+# 在Jenkins容器内创建Job配置（避免权限问题）
+docker exec jenkins-local mkdir -p /var/jenkins_home/jobs/docker-ecom-coursework
+
+docker exec jenkins-local bash -c 'cat > /var/jenkins_home/jobs/docker-ecom-coursework/config.xml << '\''EOF'\''
 <?xml version='1.1' encoding='UTF-8'?>
 <flow-definition plugin="workflow-job@1436.vfa_244484591f">
   <actions/>
@@ -114,6 +128,7 @@ cat > "$JENKINS_HOME/jobs/docker-ecom-coursework/config.xml" << 'EOF'
   <disabled>false</disabled>
 </flow-definition>
 EOF
+'
 
 # 重新加载Jenkins配置
 sleep 5
@@ -138,6 +153,16 @@ echo "   4. 创建管理员用户"
 echo "   5. 查看自动创建的 'docker-ecom-coursework' 任务"
 echo "   6. 点击 '立即构建' 开始CI/CD流水线"
 echo ""
+echo "🎯 网络配置:"
+echo "   ✅ 使用 host 网络模式"
+echo "   ✅ 可以直接访问 minikube (192.168.49.2:8443)"
+echo "   ✅ 可以使用 kubectl 命令"
+echo "   ✅ 可以使用 minikube 命令"
+echo ""
+echo "🧪 测试 Kubernetes 访问:"
+echo "   docker exec jenkins-local kubectl get nodes"
+echo "   docker exec jenkins-local minikube status"
+echo ""
 echo "📝 查看Jenkins日志:"
 echo "   docker logs -f jenkins-local"
 echo ""
@@ -145,11 +170,23 @@ echo "🛑 停止Jenkins:"
 echo "   docker stop jenkins-local"
 echo ""
 
-# 等待Docker安装完成
+# 等待工具安装完成
 wait $INSTALL_PID 2>/dev/null
 if [ $? -eq 0 ]; then
-    echo "✅ Docker CLI和docker-compose安装完成"
+    echo "✅ Docker CLI、docker-compose 和 kubectl 安装完成"
+    
+    # 验证 kubectl
+    if docker exec jenkins-local kubectl version --client > /dev/null 2>&1; then
+        echo "✅ kubectl 可用"
+    fi
+    
+    # 验证 minikube 访问
+    if docker exec jenkins-local kubectl get nodes 2>&1 | grep -q "minikube"; then
+        echo "✅ 可以访问 Kubernetes 集群"
+    else
+        echo "⚠️  Kubernetes 访问需要配置 kubeconfig"
+    fi
 else
-    echo "⚠️  Docker工具正在后台安装中，首次构建可能需要等待..."
+    echo "⚠️  工具正在后台安装中，首次构建可能需要等待..."
 fi
 echo ""

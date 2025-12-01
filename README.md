@@ -1,150 +1,250 @@
 # Docker 电商数据管理系统
 
-一个容器化的三层电商应用，展示了使用 Docker、Docker Compose 和 CI/CD 流水线的现代 DevOps 实践。
+一个容器化的三层电商应用，展示了使用 Docker、Kubernetes 和 CI/CD 流水线的现代 DevOps 实践。
 
 ## 概述
 
-本项目展示了全面的容器化技能，包括：
-- 多阶段 Dockerfile 创建和优化
-- Docker Compose 编排
-- 容器网络和卷管理
-- CI/CD 流水线实施
-- 基于属性的测试以验证正确性
+本项目实现了完整的容器化电商系统，包括：
+- 多阶段 Dockerfile 优化
+- Kubernetes 容器编排
+- 蓝绿部署策略
+- Jenkins CI/CD 自动化
+- APM 监控系统
+- 基于属性的测试
 
-## 架构
+## 系统架构
 
 系统由三个容器化服务组成：
 
-1. **前端服务**：基于 Nginx 的静态 Web 服务器，提供产品目录页面
-2. **后端 API 服务**：Spring Boot REST API，提供产品管理的 CRUD 操作
-3. **数据库服务**：MySQL 数据库，提供持久化存储
+1. **前端服务**: 基于 Nginx 的静态 Web 服务器，提供产品目录页面
+2. **后端 API 服务**: Spring Boot REST API，提供产品管理的 CRUD 操作
+3. **数据库服务**: MySQL 数据库，提供持久化存储
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        主机                                  │
+│                    Kubernetes 集群                           │
 │                                                               │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │              Docker 自定义网络                          │ │
+│  │              命名空间: ecommerce                        │ │
 │  │                                                          │ │
 │  │  ┌──────────────┐      ┌──────────────┐      ┌───────┐│ │
-│  │  │   前端       │─────▶│   后端       │─────▶│ MySQL ││ │
+│  │  │   前端       │─────>│   后端       │─────>│ MySQL ││ │
 │  │  │   (Nginx)    │      │ (Spring Boot)│      │  DB   ││ │
-│  │  │   端口 8081    │      │  端口 8080   │      │ 3306  ││ │
+│  │  │   2 副本     │      │   2 副本     │      │ 1 副本││ │
 │  │  └──────────────┘      └──────────────┘      └───────┘│ │
 │  │                                                          │ │
+│  │  蓝绿部署: Blue/Green 环境独立运行                      │ │
 │  └────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ## 技术栈
 
-- **前端**：HTML5、CSS3、JavaScript、Nginx Alpine
-- **后端**：Java 17、Spring Boot 3.x、Maven
-- **数据库**：MySQL 8.0
-- **容器化**：Docker、Docker Compose
-- **测试**：JUnit 5、jqwik（基于属性的测试）、TestContainers
-- **CI/CD**：Jenkins 或 GitLab CI
+**应用层**
+- 前端: HTML5、CSS3、JavaScript、Nginx Alpine
+- 后端: Java 17、Spring Boot 3.x、Maven
+- 数据库: MySQL 8.0
+
+**容器化与编排**
+- Docker、Docker Compose
+- Kubernetes (Minikube)
+- 蓝绿部署策略
+
+**CI/CD**
+- Jenkins Pipeline
+- 自动化测试
+- 代码覆盖率报告 (JaCoCo)
+
+**监控**
+- Prometheus
+- Grafana
+- Alertmanager
+
+**测试**
+- JUnit 5
+- jqwik (基于属性的测试)
+- TestContainers
 
 ## 前置要求
 
-- Docker 20.10 或更高版本
-- Docker Compose 2.0 或更高版本
+- Docker 20.10+
+- Minikube 1.28+
+- Java 17+
+- Maven 3.9+
 - Git
 
 ## 快速开始
 
-### 本地开发
+### 方式一: Docker Compose (本地开发)
 
-1. 克隆仓库：
 ```bash
+# 1. 克隆仓库
 git clone <repository-url>
-cd ecommerce-docker-system
-```
+cd docker-ecom-coursework
 
-2. 配置环境变量（可选）：
-```bash
-# .env 文件已存在，包含开发环境的默认配置
-# 如需自定义，可以编辑 .env 文件
-cp .env.example .env  # 可选：从模板创建
-nano .env             # 编辑环境变量
-```
-
-3. 启动所有服务：
-```bash
+# 2. 启动所有服务
 docker-compose up --build
+
+# 3. 访问应用
+# 前端: http://localhost:80
+# 后端 API: http://localhost:8080/api/products
 ```
 
-3. 访问应用：
-   - 前端：http://localhost:80
-   - 后端 API：http://localhost:8080/api/products
-   - 数据库：localhost:3306（如需直接访问）
+### 方式二: Kubernetes + Jenkins (生产环境)
 
-4. 停止所有服务：
 ```bash
-docker-compose down
-```
+# 1. 启动 Minikube
+minikube start
 
-5. 停止并删除卷（全新开始）：
-```bash
-docker-compose down -v
+# 2. 设置 Docker Registry (可选)
+./ci/setup-docker-registry.sh
+
+# 3. 启动 Jenkins
+./ci/run-jenkins-local.sh
+
+# 4. 配置 Jenkins 访问 Kubernetes
+./ci/setup-jenkins-k8s.sh
+
+# 5. 访问 Jenkins
+# 打开 http://localhost:8090
+# 输入初始管理员密码（脚本会显示）
+
+# 6. 运行 Pipeline
+# 进入 docker-ecom-coursework 任务
+# 点击 "Build with Parameters"
+# 选择参数后点击 "Build"
 ```
 
 ## 项目结构
 
 ```
-ecommerce-docker-system/
-├── frontend/               # 前端服务
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   └── html/
-│       ├── index.html
-│       ├── product-detail.html
-│       ├── css/
-│       │   └── styles.css
-│       └── js/
-│           └── app.js
-├── backend/                # 后端 API 服务
-│   ├── Dockerfile
-│   ├── pom.xml
-│   └── src/
-│       ├── main/
-│       │   ├── java/
-│       │   │   └── com/ecommerce/
-│       │   │       ├── EcommerceApplication.java
-│       │   │       ├── controller/
-│       │   │       ├── service/
-│       │   │       ├── repository/
-│       │   │       └── model/
-│       │   └── resources/
-│       │       └── application.yml
-│       └── test/
-│           └── java/
-│               └── com/ecommerce/
-├── database/               # 数据库初始化
-│   └── init.sql
-├── k8s/                    # Kubernetes 清单（高级）
-│   ├── frontend/
-│   ├── backend/
-│   └── database/
-├── docs/                   # 文档
-├── docker-compose.yml      # 开发编排
-├── docker-compose.prod.yml # 生产编排
-├── .gitignore
-├── .dockerignore
-└── README.md
+docker-ecom-coursework/
+├── frontend/                 # 前端服务
+│   ├── Dockerfile           # 多阶段构建配置
+│   ├── nginx.conf           # Nginx 配置
+│   └── html/                # 静态资源
+├── backend/                  # 后端服务
+│   ├── Dockerfile           # 多阶段构建配置
+│   ├── pom.xml              # Maven 配置
+│   └── src/                 # Java 源代码
+├── database/                 # 数据库
+│   ├── Dockerfile           # MySQL 配置
+│   └── init.sql             # 初始化脚本
+├── k8s/                      # Kubernetes 配置
+│   ├── backend/             # 后端 K8s 资源
+│   ├── frontend/            # 前端 K8s 资源
+│   ├── database/            # 数据库 K8s 资源
+│   ├── blue-green/          # 蓝绿部署配置
+│   ├── deploy.sh            # 部署脚本
+│   └── README.md            # K8s 部署文档
+├── monitoring/               # 监控配置
+│   ├── prometheus/          # Prometheus 配置
+│   ├── grafana/             # Grafana 配置
+│   └── alertmanager/        # Alertmanager 配置
+├── ci/                       # CI/CD 脚本
+│   ├── run-jenkins-local.sh      # 启动 Jenkins
+│   ├── setup-jenkins-k8s.sh      # 配置 K8s 访问
+│   ├── setup-minikube.sh         # 设置 Minikube
+│   ├── k8s-access.sh             # K8s 服务访问
+│   └── install-k8s-plugins.sh    # 安装 Jenkins 插件
+├── docs/                     # 文档
+├── docker-compose.yml        # Docker Compose 配置
+├── docker-compose.monitoring.yml  # 监控栈配置
+├── Jenkinsfile              # Jenkins Pipeline 定义
+└── README.md                # 本文件
+```
+
+## Jenkins CI/CD Pipeline
+
+### Pipeline 阶段
+
+1. **环境信息** - 显示构建参数和环境配置
+2. **代码检出** - 使用本地挂载的代码
+3. **构建阶段** - 构建后端应用和 Docker 镜像
+4. **推送镜像到仓库** - 推送镜像到 Docker Registry
+5. **单元测试** - 运行 JUnit 单元测试
+6. **集成测试** - 运行属性测试
+7. **代码覆盖率报告** - 生成 JaCoCo 覆盖率报告
+8. **Kubernetes 蓝绿部署** - 部署到指定环境 (blue/green)
+9. **健康检查** - 验证服务状态和启动端口转发
+10. **部署监控系统** - 可选部署 Prometheus + Grafana
+11. **部署验证** - 测试服务可访问性
+
+### 构建参数
+
+- **K8S_VERSION**: 选择部署环境 (blue 或 green)
+- **SWITCH_TRAFFIC**: 是否自动切换流量到新环境
+- **SKIP_TESTS**: 是否跳过测试阶段 (快速部署)
+- **DEPLOY_MONITORING**: 是否部署监控系统
+- **PUSH_TO_REGISTRY**: 是否推送镜像到仓库 (默认: true)
+
+### 使用示例
+
+```bash
+# 部署到 blue 环境
+K8S_VERSION=blue
+SWITCH_TRAFFIC=false
+SKIP_TESTS=false
+DEPLOY_MONITORING=false
+
+# 部署到 green 环境并自动切换流量
+K8S_VERSION=green
+SWITCH_TRAFFIC=true
+SKIP_TESTS=false
+DEPLOY_MONITORING=true
+```
+
+## Kubernetes 蓝绿部署
+
+### 蓝绿部署策略
+
+蓝绿部署维护两个完全相同的生产环境：
+- **Blue 环境**: 当前生产环境
+- **Green 环境**: 新版本部署和测试环境
+
+### 部署流程
+
+1. **部署新版本到 Green** - 在不影响生产的情况下部署
+2. **测试 Green 环境** - 验证新版本功能正常
+3. **切换流量** - 原子性地将流量切换到 Green
+4. **监控** - 观察新版本运行状态
+5. **回滚** (如需要) - 快速切换回 Blue 环境
+
+### 手动操作
+
+```bash
+# 部署到 blue 环境
+cd k8s/blue-green
+./deploy-blue-green.sh blue
+
+# 部署到 green 环境
+./deploy-blue-green.sh green
+
+# 切换流量到 green
+./switch-traffic.sh green
+
+# 回滚到 blue
+./switch-traffic.sh blue
 ```
 
 ## API 端点
 
-### 产品 API
+### 产品管理 API
 
 | 方法 | 端点 | 描述 | 响应 |
 |------|------|------|------|
-| GET | /api/products | 列出所有产品 | 200 + Product[] |
-| GET | /api/products/{id} | 根据 ID 获取产品 | 200 + Product |
-| POST | /api/products | 创建新产品 | 201 + Product |
+| GET | /api/products | 获取所有产品 | 200 + Product[] |
+| GET | /api/products/{id} | 获取单个产品 | 200 + Product |
+| POST | /api/products | 创建产品 | 201 + Product |
 | PUT | /api/products/{id} | 更新产品 | 200 + Product |
 | DELETE | /api/products/{id} | 删除产品 | 204 |
+
+### 健康检查
+
+| 端点 | 描述 |
+|------|------|
+| /actuator/health | 后端健康检查 |
+| /health | 前端健康检查 |
 
 ### 产品对象示例
 
@@ -162,297 +262,245 @@ ecommerce-docker-system/
 }
 ```
 
-## 开发
-
-### 构建单个服务
-
-```bash
-# 构建前端
-docker build -t ecommerce-frontend ./frontend
-
-# 构建后端
-docker build -t ecommerce-backend ./backend
-
-# 构建所有服务
-docker-compose build
-```
+## 测试
 
 ### 运行测试
 
 ```bash
-# 运行后端单元测试
+# 单元测试
 cd backend
 mvn test
 
-# 运行后端集成测试
+# 集成测试
 mvn verify
 
-# 运行基于属性的测试
+# 属性测试
 mvn test -Dtest=*PropertyTest
+
+# 生成覆盖率报告
+mvn jacoco:report
 ```
 
-### 查看日志
+### 测试类型
+
+1. **单元测试** - 测试单个组件功能
+2. **属性测试** - 使用 jqwik 进行随机输入测试 (100+ 次迭代)
+3. **集成测试** - 使用 TestContainers 测试服务交互
+4. **端到端测试** - 验证完整业务流程
+
+### 覆盖率报告
+
+Jenkins Pipeline 自动生成 JaCoCo 覆盖率报告：
+- 报告位置: `backend/target/site/jacoco/index.html`
+- Jenkins 中查看: Build > JaCoCo Coverage Report
+
+## 监控
+
+### Prometheus + Grafana
+
+监控系统提供：
+- 实时指标收集
+- 可视化仪表板
+- 告警配置
+- 容器资源监控
+
+### 访问监控服务
 
 ```bash
-# 查看所有日志
-docker-compose logs
+# 通过 Docker Compose
+docker-compose -f docker-compose.monitoring.yml up -d
 
-# 查看特定服务日志
-docker-compose logs frontend
-docker-compose logs backend
-docker-compose logs mysql
+# 访问地址
+# Grafana: http://localhost:3000 (admin/admin)
+# Prometheus: http://localhost:9090
+# Alertmanager: http://localhost:9093
+```
 
-# 实时跟踪日志
+### Kubernetes 监控
+
+```bash
+# 部署监控到 Kubernetes
+kubectl create namespace monitoring
+kubectl apply -f monitoring/prometheus/ -n monitoring
+kubectl apply -f monitoring/grafana/ -n monitoring
+
+# 访问服务
+kubectl port-forward -n monitoring service/grafana 3000:3000
+kubectl port-forward -n monitoring service/prometheus 9090:9090
+```
+
+## 常用命令
+
+### Docker Compose
+
+```bash
+# 启动服务
+docker-compose up -d
+
+# 查看日志
 docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 重建并启动
+docker-compose up --build -d
 ```
 
-## 配置
-
-### 环境变量
-
-项目使用 `.env` 文件管理环境变量。所有敏感配置都从 `.env` 文件中读取，避免硬编码。
-
-**主要环境变量：**
-
-- `MYSQL_ROOT_PASSWORD`：MySQL root 密码
-- `MYSQL_DATABASE`：数据库名称（默认：ecommerce）
-- `MYSQL_USER`：MySQL 应用用户
-- `MYSQL_PASSWORD`：应用用户密码
-- `DB_HOST`：数据库主机名（默认：database）
-- `DB_PORT`：数据库端口（默认：3306）
-- `DB_NAME`：数据库名称（默认：ecommerce）
-- `DB_USER`：后端连接使用的数据库用户
-- `DB_PASSWORD`：后端连接使用的数据库密码
-- `SPRING_PROFILES_ACTIVE`：Spring 活动配置文件（dev/prod）
-
-详细配置说明请参阅 [ENV_SETUP.md](ENV_SETUP.md)
-
-## 测试策略
-
-项目实施了全面的测试：
-
-1. **单元测试**：隔离测试单个组件
-2. **基于属性的测试**：在随机输入上验证正确性属性（100+ 次迭代）
-3. **集成测试**：使用 TestContainers 测试服务通信
-4. **端到端测试**：验证完整工作流
-
-### 基于属性的测试
-
-本项目使用 jqwik 进行基于属性的测试以验证正确性属性：
-
-- 产品检索完整性
-- 产品创建持久性
-- 产品更新正确性
-- 产品删除完整性
-- 跨容器生命周期的卷持久性
-- 端到端数据流完整性
-
-## CI/CD 流水线
-
-项目包含三个平台的全面 CI/CD 流水线配置：
-
-- **GitLab CI**（`.gitlab-ci.yml`）- 用于 GitLab 仓库
-- **Jenkins**（`Jenkinsfile`）- 用于 Jenkins 自动化服务器
-- **GitHub Actions**（`.github/workflows/ci-cd.yml`）- 用于 GitHub 仓库
-
-### 流水线阶段
-
-1. **构建阶段**：为所有服务构建 Docker 镜像
-2. **测试阶段**：运行单元、集成和属性测试，生成覆盖率报告
-3. **推送阶段**：使用适当的标签将镜像推送到容器仓库
-4. **部署阶段**：部署到预发布/生产环境，需要手动批准
-
-### 快速开始
-
-选择您的平台并按照设置：
+### Kubernetes
 
 ```bash
-# 验证 CI/CD 配置
-.ci/validate-pipelines.sh
+# 查看所有资源
+kubectl get all -n ecommerce
 
-# 查看快速入门指南
-cat .ci/QUICK_START.md
+# 查看 Pod 日志
+kubectl logs -f deployment/backend -n ecommerce
+
+# 扩展副本数
+kubectl scale deployment/backend --replicas=3 -n ecommerce
+
+# 查看服务
+kubectl get services -n ecommerce
+
+# 端口转发
+kubectl port-forward -n ecommerce service/frontend-service 8082:80
 ```
 
-详细设置说明，请参阅：
-- [CI/CD 设置指南](docs/CI_CD_SETUP.md)
-- [CI/CD README](CI_CD_README.md)
-- [快速入门](.ci/QUICK_START.md)
-
-## 生产部署
-
-生产部署：
+### Jenkins
 
 ```bash
-# 构建生产镜像
-docker-compose -f docker-compose.prod.yml build
+# 启动 Jenkins
+./ci/run-jenkins-local.sh
 
-# 推送到仓库
-docker-compose -f docker-compose.prod.yml push
+# 查看 Jenkins 日志
+docker logs -f jenkins-local
 
-# 部署
-docker-compose -f docker-compose.prod.yml up -d
+# 停止 Jenkins
+docker stop jenkins-local
+
+# 重启 Jenkins
+docker restart jenkins-local
 ```
 
-## 高级功能
+## 环境变量
 
-### Kubernetes 部署
-
-`k8s/` 目录中提供了用于生产编排的 Kubernetes 清单。
-
-**快速开始：**
-```bash
-# 构建并加载镜像（针对 minikube/kind）
-cd k8s
-./deploy.sh
-
-# 访问应用
-kubectl port-forward -n ecommerce service/frontend-service 8080:80
-# 打开 http://localhost:8080
-```
-
-**文档：**
-- [Kubernetes 部署指南（中文）](k8s/README_CN.md) - 综合部署说明
-- [快速入门指南（中文）](k8s/QUICK_START_CN.md) - 常见任务快速参考
-- [Kubernetes README（英文）](k8s/README.md) - 详细清单文档
-
-**特性：**
-- 数据库使用 StatefulSet 和持久化存储
-- 前端和后端使用 Deployment 和健康检查
-- 使用 ConfigMap 和 Secret 进行配置管理
-- 支持水平扩展
-- 资源限制和请求
-- 自动化部署脚本
-
-### 监控
-
-可选的 APM 监控，使用 Prometheus/Grafana 或 SkyWalking 实现可观测性。
-
-### 部署策略
-
-支持蓝绿和金丝雀部署策略，实现零停机发布。
-
-## 安全
-
-### ⚠️ 重要安全提示
-
-**此仓库包含仅用于开发目的的硬编码凭证。**
-
-`docker-compose.yml` 中的默认配置使用硬编码密码，这些密码**不安全**，**绝不**应在生产环境中使用。
-
-### 本地开发
-
-1. 复制 `.env.example` 到 `.env`：
-   ```bash
-   cp .env.example .env
-   ```
-
-2. 更新 `.env` 中的密码（本地开发可选）
-
-3. `.env` 文件已被 gitignore，不会被提交
-
-### 生产部署
-
-**关键**：在部署到生产之前：
-
-1. ✅ 使用强且唯一的密码（16+ 字符）
-2. ✅ 使用 Docker secrets 或外部密钥管理（HashiCorp Vault、AWS Secrets Manager）
-3. ✅ 绝不使用此仓库的默认密码
-4. ✅ 定期轮换凭证
-5. ✅ 查看 [SECURITY_AUDIT.md](SECURITY_AUDIT.md) 获取详细建议
-
-### 扫描密钥
-
-运行密钥扫描器检查硬编码凭证：
+主要环境变量配置 (`.env` 文件):
 
 ```bash
-bash scripts/scan-secrets.sh
+# 数据库配置
+MYSQL_ROOT_PASSWORD=rootpassword
+MYSQL_DATABASE=ecommerce
+MYSQL_USER=ecommerce_user
+MYSQL_PASSWORD=ecommerce_password
+
+# 后端配置
+DB_HOST=database
+DB_PORT=3306
+DB_NAME=ecommerce
+DB_USER=ecommerce_user
+DB_PASSWORD=ecommerce_password
+SPRING_PROFILES_ACTIVE=dev
 ```
-
-此脚本将：
-- 扫描硬编码密码和 API 密钥
-- 检查意外提交的密钥文件
-- 验证 .gitignore 配置
-- 提供修复建议
-
-### 已知安全问题（仅开发）
-
-以下文件包含用于开发的硬编码凭证：
-- `docker-compose.yml` - 数据库密码
-- `backend/src/main/resources/application.yml` - 默认回退密码
-
-这些已在 [SECURITY_AUDIT.md](SECURITY_AUDIT.md) 中记录，并提供了修复步骤。
 
 ## 故障排查
 
 ### 常见问题
 
-**服务无法通信：**
-- 验证所有服务在同一 Docker 网络上
-- 检查 docker-compose.yml 中的服务名称是否匹配
+**1. Jenkins 无法访问 Kubernetes**
 
-**数据库连接失败：**
-- 确保数据库健康检查在后端启动前通过
-- 验证环境变量设置正确
+```bash
+# 重新配置 Kubernetes 访问
+./ci/setup-jenkins-k8s.sh
 
-**端口冲突：**
-- 检查端口 80、8080 或 3306 是否已被占用
-- 修改 docker-compose.yml 中的端口映射
+# 验证配置
+docker exec jenkins-local kubectl get nodes
+```
 
-**卷权限问题：**
-- 在 Linux 上，确保卷挂载的权限正确
-- 使用命名卷而非绑定挂载
+**2. Pod 无法启动**
 
-更多故障排查信息，请参阅 [docs/troubleshooting.md](docs/troubleshooting.md)。
+```bash
+# 查看 Pod 详情
+kubectl describe pod <pod-name> -n ecommerce
+
+# 查看日志
+kubectl logs <pod-name> -n ecommerce
+
+# 检查镜像
+minikube image ls | grep ecommerce
+```
+
+**3. 服务无法访问**
+
+```bash
+# 检查服务状态
+kubectl get services -n ecommerce
+
+# 重启端口转发
+./ci/k8s-access.sh
+
+# 检查 Pod 健康
+kubectl get pods -n ecommerce
+```
+
+**4. 数据库连接失败**
+
+```bash
+# 检查数据库 Pod
+kubectl get pods -n ecommerce -l app=mysql
+
+# 查看数据库日志
+kubectl logs -f statefulset/mysql -n ecommerce
+
+# 测试连接
+kubectl exec -it mysql-0 -n ecommerce -- mysql -u root -p
+```
+
+## 安全注意事项
+
+**警告**: 本项目包含用于开发的硬编码凭证，不应在生产环境使用。
+
+### 生产部署前必须:
+
+1. 更改所有默认密码
+2. 使用 Kubernetes Secrets 管理敏感信息
+3. 启用 TLS/SSL
+4. 配置网络策略
+5. 实施访问控制
+6. 定期更新依赖
+
+详细安全建议请参阅 `docs/` 目录中的安全文档。
+
+## 文档
+
+### 核心文档
+- [架构文档](docs/architecture.md) - 系统架构和设计决策
+- [部署指南](docs/deployment.md) - 详细部署说明
+- [API 文档](docs/api.md) - REST API 参考
+- [故障排查](docs/troubleshooting.md) - 常见问题解决
+
+### Kubernetes 文档
+- [K8s 部署指南](k8s/README.md) - Kubernetes 部署详解
+- [蓝绿部署](k8s/blue-green/README.md) - 蓝绿部署策略
+- [监控设置](docs/monitoring-setup.md) - 监控系统配置
+
+### CI/CD 文档
+- [CI/CD 设置](docs/CI_CD_SETUP.md) - Jenkins Pipeline 配置
+- [Docker Registry](docs/docker-registry.md) - 镜像仓库配置指南
+- [Dockerfile 优化](docs/dockerfile-optimizations.md) - 镜像优化技巧
 
 ## 贡献
 
-我们欢迎贡献！请阅读我们的[贡献指南](CONTRIBUTING.md)获取详细信息：
+欢迎贡献！请遵循以下步骤：
 
-- 开发工作流和分支策略
-- 提交消息约定（Conventional Commits）
-- Pull Request 流程
-- 代码审查指南
-- 测试要求
+1. Fork 本仓库
+2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'feat: add amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 创建 Pull Request
 
-### 贡献者快速入门
+### 提交消息规范
 
-1. Fork 仓库
-2. 从 `develop` 创建功能分支：
-   ```bash
-   git checkout develop
-   git pull origin develop
-   git checkout -b feature/your-feature-name
-   ```
-
-3. 进行更改并使用约定式提交：
-   ```bash
-   git commit -m "feat(backend): add new feature"
-   ```
-
-4. 为新功能编写测试
-5. 确保所有测试通过：
-   ```bash
-   cd backend
-   mvn clean test verify
-   ```
-
-6. 推送并创建到 `develop` 的 Pull Request
-
-### 分支保护
-
-此仓库对 `main` 和 `develop` 分支使用分支保护规则：
-
-- 所有更改需要 Pull Request
-- 至少需要 1 个批准
-- 所有 CI 检查必须通过
-- 不允许直接推送
-
-详情请参阅[分支保护指南](.github/BRANCH_PROTECTION.md)。
-
-### 提交消息格式
-
-我们遵循[约定式提交](https://www.conventionalcommits.org/)格式：
+遵循 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
 
 ```
 <type>(<scope>): <subject>
@@ -462,49 +510,17 @@ bash scripts/scan-secrets.sh
 <footer>
 ```
 
-**类型**：`feat`、`fix`、`docs`、`style`、`refactor`、`test`、`chore`、`ci`、`build`、`perf`
-
-**示例**：
-```bash
-feat(backend): add product search endpoint
-fix(frontend): correct price display formatting
-docs(readme): update deployment instructions
-test(backend): add property tests for product CRUD
-```
-
-完整指南请参阅 [CONTRIBUTING.md](CONTRIBUTING.md)。
+类型: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 ## 许可证
 
 本项目用于教育和演示目的。
 
-## 文档
-
-### 核心文档
-- [架构文档](docs/architecture.md) - 系统架构、组件和设计决策
-- [部署指南](docs/deployment.md) - 所有环境的分步部署说明
-- [Dockerfile 优化](docs/dockerfile-optimizations.md) - 多阶段构建策略和优化技术
-- [故障排查指南](docs/troubleshooting.md) - 常见问题和解决方案
-- [API 文档](docs/api.md) - 完整的 REST API 参考和 OpenAPI 规范
-
-### Kubernetes 文档（中文）
-- [Kubernetes 部署指南](k8s/README_CN.md) - 综合部署说明
-- [快速入门指南](k8s/QUICK_START_CN.md) - 常见任务快速参考
-- [部署检查清单](k8s/DEPLOYMENT_CHECKLIST_CN.md) - 分步部署检查清单
-- [实施总结](k8s/IMPLEMENTATION_SUMMARY_CN.md) - 完整实施概述
-
-### 其他文档
-- [CI/CD 设置指南](docs/CI_CD_SETUP.md) - 详细的 CI/CD 流水线配置
-- [Docker Compose 设置](DOCKER_COMPOSE_SETUP.md) - Docker Compose 编排详情
-- [CI/CD README](CI_CD_README.md) - CI/CD 流水线概述
-
 ## 联系方式
 
-如有问题或疑问，请在仓库中提交 issue。
+如有问题或建议，请提交 Issue。
 
 ---
 
-## 语言版本
-
-- [English Version](README.md) - 英文版本
-- [中文版本](README_CN.md) - 本文件
+**版本**: 1.0.0  
+**最后更新**: 2025-12-01
