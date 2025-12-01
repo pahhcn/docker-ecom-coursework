@@ -123,7 +123,7 @@ minikube start
 
 Pipeline 从以下 Git 仓库自动拉取代码：
 - **仓库地址**: https://github.com/pahhcn/docker-ecom-coursework.git
-- **分支**: develop
+- **分支**: ci
 - **轮询间隔**: 每 2 分钟
 - **克隆方式**: 浅克隆 (depth=1) 提高速度
 

@@ -4,12 +4,15 @@ pipeline {
     environment {
         PROJECT_NAME = 'docker-ecom-coursework'
         IMAGE_TAG = "${BUILD_NUMBER}"
-        WORKSPACE_DIR = '/workspace'
+        GIT_REPO = 'https://github.com/pahhcn/docker-ecom-coursework.git'
+        GIT_BRANCH = 'ci'
         K8S_NAMESPACE = 'ecommerce'
         KUBECONFIG = '/var/jenkins_home/.kube/config'
         // 镜像仓库配置
-        DOCKER_REGISTRY = 'localhost:5000'  // 本地 Registry，可改为 Docker Hub
-        REGISTRY_CREDENTIALS = 'docker-registry-credentials'  // Jenkins 凭据 ID
+        DOCKER_REGISTRY = 'localhost:5000'
+        REGISTRY_CREDENTIALS = 'docker-registry-credentials'
+        // 构建状态标记
+        BUILD_SUCCESS = 'false'
     }
     
     parameters {
