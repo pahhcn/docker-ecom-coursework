@@ -118,25 +118,23 @@ pipeline {
                         echo "构建后端应用..."
                         echo "工作空间路径: ${WORKSPACE}"
                         
-                        # 检查 backend 目录
-                        echo "检查 backend 目录内容:"
-                        ls -la ${WORKSPACE}/backend/
+                        # 在 Jenkins 工作空间内直接构建（不使用 Docker）
+                        cd ${WORKSPACE}/backend
                         
-                        # 检查 pom.xml 是否存在
-                        if [ -f ${WORKSPACE}/backend/pom.xml ]; then
-                            echo "✅ pom.xml 存在"
+                        # 检查 Maven 是否可用
+                        if command -v mvn &> /dev/null; then
+                            echo "使用本地 Maven 构建..."
+                            mvn clean package -DskipTests
                         else
-                            echo "❌ pom.xml 不存在"
-                            exit 1
+                            echo "本地 Maven 不可用，使用 Docker Maven..."
+                            # 使用 Docker 但挂载当前目录
+                            docker run --rm \
+                              -v \$(pwd):/app \
+                              -v /root/.m2:/root/.m2 \
+                              -w /app \
+                              maven:3.9-eclipse-temurin-17 \
+                              mvn clean package -DskipTests
                         fi
-                        
-                        # 使用绝对路径挂载
-                        docker run --rm \
-                          -v ${WORKSPACE}/backend:/app \
-                          -v /root/.m2:/root/.m2 \
-                          -w /app \
-                          maven:3.9-eclipse-temurin-17 \
-                          sh -c "ls -la /app && mvn clean package -DskipTests"
                     """
                     
                     // 构建Docker镜像
@@ -164,12 +162,18 @@ pipeline {
                 echo '🧪 运行单元测试'
                 echo '========================================='
                 sh """
-                    docker run --rm \
-                      -v ${WORKSPACE}/backend:/app \
-                      -v /root/.m2:/root/.m2 \
-                      -w /app \
-                      maven:3.9-eclipse-temurin-17 \
-                      mvn test -Dtest=*ServiceTest
+                    cd ${WORKSPACE}/backend
+                    
+                    if command -v mvn &> /dev/null; then
+                        mvn test -Dtest=*ServiceTest
+                    else
+                        docker run --rm \
+                          -v \$(pwd):/app \
+                          -v /root/.m2:/root/.m2 \
+                          -w /app \
+                          maven:3.9-eclipse-temurin-17 \
+                          mvn test -Dtest=*ServiceTest
+                    fi
                 """
             }
             post {
@@ -188,13 +192,19 @@ pipeline {
                 echo '🔗 运行集成测试（属性测试）'
                 echo '========================================='
                 sh """
+                    cd ${WORKSPACE}/backend
+                    
                     # 只运行不需要Docker的属性测试
-                    docker run --rm \
-                      -v ${WORKSPACE}/backend:/app \
-                      -v /root/.m2:/root/.m2 \
-                      -w /app \
-                      maven:3.9-eclipse-temurin-17 \
-                      mvn test -Dtest=Product*PropertyTest
+                    if command -v mvn &> /dev/null; then
+                        mvn test -Dtest=Product*PropertyTest
+                    else
+                        docker run --rm \
+                          -v \$(pwd):/app \
+                          -v /root/.m2:/root/.m2 \
+                          -w /app \
+                          maven:3.9-eclipse-temurin-17 \
+                          mvn test -Dtest=Product*PropertyTest
+                    fi
                 """
             }
             post {
@@ -257,12 +267,18 @@ pipeline {
                 echo '📊 生成代码覆盖率报告'
                 echo '========================================='
                 sh """
-                    docker run --rm \
-                      -v ${WORKSPACE}/backend:/app \
-                      -v /root/.m2:/root/.m2 \
-                      -w /app \
-                      maven:3.9-eclipse-temurin-17 \
-                      mvn jacoco:report
+                    cd ${WORKSPACE}/backend
+                    
+                    if command -v mvn &> /dev/null; then
+                        mvn jacoco:report
+                    else
+                        docker run --rm \
+                          -v \$(pwd):/app \
+                          -v /root/.m2:/root/.m2 \
+                          -w /app \
+                          maven:3.9-eclipse-temurin-17 \
+                          mvn jacoco:report
+                    fi
                     
                     echo ""
                     echo "✅ 覆盖率报告已生成"
