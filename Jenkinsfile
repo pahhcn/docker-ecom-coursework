@@ -42,7 +42,7 @@ pipeline {
     
     // 代码提交触发自动构建
     triggers {
-        pollSCM('H/5 * * * *')  // 每5分钟检查代码变更
+        pollSCM('H/2 * * * *')  // 每2分钟检查代码变更
     }
     
     stages {
@@ -58,7 +58,9 @@ pipeline {
                         echo "部署环境: Kubernetes 蓝绿部署"
                         echo "目标版本: ${params.K8S_VERSION}"
                         echo "自动切换流量: ${params.SWITCH_TRAFFIC}"
-                        echo "工作空间: ${WORKSPACE_DIR}"
+                        echo "工作空间: ${WORKSPACE}"
+                        echo "Git 仓库: ${GIT_REPO}"
+                        echo "Git 分支: ${GIT_BRANCH}"
                     """
                 }
             }
@@ -67,11 +69,37 @@ pipeline {
         stage('代码检出') {
             steps {
                 echo '========================================='
-                echo '📥 使用本地挂载代码'
+                echo '📥 从 Git 仓库克隆代码'
                 echo '========================================='
                 script {
-                    echo "代码路径: /workspace"
-                    sh 'ls -la /workspace'
+                    // 清理工作空间
+                    cleanWs()
+                    
+                    // 从 Git 仓库克隆代码
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: "*/${GIT_BRANCH}"]],
+                        userRemoteConfigs: [[url: "${GIT_REPO}"]],
+                        extensions: [
+                            [$class: 'CloneOption', depth: 1, noTags: false, shallow: true],
+                            [$class: 'CheckoutOption', timeout: 10]
+                        ]
+                    ])
+                    
+                    // 显示提交信息
+                    sh '''
+                        echo "✅ 代码检出完成"
+                        echo ""
+                        echo "仓库: ${GIT_REPO}"
+                        echo "分支: ${GIT_BRANCH}"
+                        echo ""
+                        echo "最新提交:"
+                        git log -1 --pretty=format:"  提交: %h%n  作者: %an%n  时间: %ad%n  消息: %s"
+                        echo ""
+                        echo ""
+                        echo "工作目录: ${WORKSPACE}"
+                        ls -la
+                    '''
                 }
             }
         }
@@ -85,15 +113,11 @@ pipeline {
                     // 构建后端应用
                     sh '''
                         echo "构建后端应用..."
-                        # 获取实际的主机路径（用于Docker-in-Docker）
-                        REAL_HOST_PATH=$(grep "/workspace" /proc/self/mountinfo | awk '{print $4}' | head -1)
-                        if [ -z "$REAL_HOST_PATH" ]; then
-                            REAL_HOST_PATH="/workspace"
-                        fi
-                        echo "使用主机路径: $REAL_HOST_PATH"
+                        WORKSPACE_PATH="${WORKSPACE}"
+                        echo "工作空间路径: ${WORKSPACE_PATH}"
                         
                         docker run --rm \
-                          -v ${REAL_HOST_PATH}/backend:/app \
+                          -v "${WORKSPACE_PATH}/backend":/app \
                           -v /root/.m2:/root/.m2 \
                           -w /app \
                           maven:3.9-eclipse-temurin-17 \
@@ -103,7 +127,6 @@ pipeline {
                     // 构建Docker镜像
                     sh """
                         echo "构建Docker镜像..."
-                        cd /workspace
                         docker build -t ${PROJECT_NAME}-frontend:${IMAGE_TAG} ./frontend
                         docker build -t ${PROJECT_NAME}-backend:${IMAGE_TAG} ./backend
                         
@@ -126,13 +149,10 @@ pipeline {
                 echo '🧪 运行单元测试'
                 echo '========================================='
                 sh '''
-                    REAL_HOST_PATH=$(grep "/workspace" /proc/self/mountinfo | awk '{print $4}' | head -1)
-                    if [ -z "$REAL_HOST_PATH" ]; then
-                        REAL_HOST_PATH="/workspace"
-                    fi
+                    WORKSPACE_PATH="${WORKSPACE}"
                     
                     docker run --rm \
-                      -v ${REAL_HOST_PATH}/backend:/app \
+                      -v "${WORKSPACE_PATH}/backend":/app \
                       -v /root/.m2:/root/.m2 \
                       -w /app \
                       maven:3.9-eclipse-temurin-17 \
@@ -155,15 +175,11 @@ pipeline {
                 echo '🔗 运行集成测试（属性测试）'
                 echo '========================================='
                 sh '''
-                    REAL_HOST_PATH=$(grep "/workspace" /proc/self/mountinfo | awk '{print $4}' | head -1)
-                    if [ -z "$REAL_HOST_PATH" ]; then
-                        REAL_HOST_PATH="/workspace"
-                    fi
+                    WORKSPACE_PATH="${WORKSPACE}"
                     
                     # 只运行不需要Docker的属性测试
-                    # 排除: EndToEndDataFlowPropertyTest, VolumePersistencePropertyTest, ServiceCommunicationIntegrationTest
                     docker run --rm \
-                      -v ${REAL_HOST_PATH}/backend:/app \
+                      -v "${WORKSPACE_PATH}/backend":/app \
                       -v /root/.m2:/root/.m2 \
                       -w /app \
                       maven:3.9-eclipse-temurin-17 \
@@ -172,7 +188,17 @@ pipeline {
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: '/workspace/backend/target/surefire-reports/*.xml'
+                    junit allowEmptyResults: true, testResults: 'backend/target/surefire-reports/*.xml'
+                }
+            }
+        }
+        
+        stage('标记构建成功') {
+            steps {
+                script {
+                    // 如果到达这里，说明构建和测试都成功了
+                    env.BUILD_SUCCESS = 'true'
+                    echo "✅ 构建和测试成功，标记为可部署版本"
                 }
             }
         }
@@ -220,13 +246,10 @@ pipeline {
                 echo '📊 生成代码覆盖率报告'
                 echo '========================================='
                 sh '''
-                    REAL_HOST_PATH=$(grep "/workspace" /proc/self/mountinfo | awk '{print $4}' | head -1)
-                    if [ -z "$REAL_HOST_PATH" ]; then
-                        REAL_HOST_PATH="/workspace"
-                    fi
+                    WORKSPACE_PATH="${WORKSPACE}"
                     
                     docker run --rm \
-                      -v ${REAL_HOST_PATH}/backend:/app \
+                      -v "${WORKSPACE_PATH}/backend":/app \
                       -v /root/.m2:/root/.m2 \
                       -w /app \
                       maven:3.9-eclipse-temurin-17 \
@@ -236,8 +259,8 @@ pipeline {
                     echo "✅ 覆盖率报告已生成"
                     echo "📊 报告位置: backend/target/site/jacoco/index.html"
                     
-                    # 显示覆盖率摘要（如果存在）
-                    if [ -f /workspace/backend/target/site/jacoco/index.html ]; then
+                    # 显示覆盖率摘要
+                    if [ -f "${WORKSPACE_PATH}/backend/target/site/jacoco/index.html" ]; then
                         echo "可以在工作空间中查看完整的覆盖率报告"
                     fi
                 '''
@@ -248,9 +271,9 @@ pipeline {
                         // 使用 JaCoCo 插件发布覆盖率报告
                         try {
                             jacoco(
-                                execPattern: '/workspace/backend/target/jacoco.exec',
-                                classPattern: '/workspace/backend/target/classes',
-                                sourcePattern: '/workspace/backend/src/main/java'
+                                execPattern: 'backend/target/jacoco.exec',
+                                classPattern: 'backend/target/classes',
+                                sourcePattern: 'backend/src/main/java'
                             )
                             echo "✅ JaCoCo 覆盖率报告已发布"
                         } catch (Exception e) {
@@ -263,6 +286,9 @@ pipeline {
         }
         
         stage('Kubernetes蓝绿部署') {
+            when {
+                expression { env.BUILD_SUCCESS == 'true' }
+            }
             steps {
                 echo '========================================='
                 echo '🔵🟢 Kubernetes蓝绿部署'
@@ -271,8 +297,6 @@ pipeline {
                     def version = params.K8S_VERSION
                     
                     sh """
-                        cd /workspace
-                        
                         # 标记镜像
                         echo "📦 准备镜像..."
                         docker tag ${PROJECT_NAME}-backend:${IMAGE_TAG} ecommerce-backend:latest
