@@ -118,12 +118,25 @@ pipeline {
                         echo "构建后端应用..."
                         echo "工作空间路径: ${WORKSPACE}"
                         
+                        # 检查 backend 目录
+                        echo "检查 backend 目录内容:"
+                        ls -la ${WORKSPACE}/backend/
+                        
+                        # 检查 pom.xml 是否存在
+                        if [ -f ${WORKSPACE}/backend/pom.xml ]; then
+                            echo "✅ pom.xml 存在"
+                        else
+                            echo "❌ pom.xml 不存在"
+                            exit 1
+                        fi
+                        
+                        # 使用绝对路径挂载
                         docker run --rm \
                           -v ${WORKSPACE}/backend:/app \
                           -v /root/.m2:/root/.m2 \
                           -w /app \
                           maven:3.9-eclipse-temurin-17 \
-                          mvn clean package -DskipTests
+                          sh -c "ls -la /app && mvn clean package -DskipTests"
                     """
                     
                     // 构建Docker镜像
