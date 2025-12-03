@@ -22,7 +22,7 @@ public class ProductUpdatePropertyTest extends PropertyTestBase {
     private ProductRepository productRepository;
     
     @Property(tries = 100)
-    @Label("For any existing product and valid update data, updated fields should match while preserving unchanged fields")
+    @Label("对于任何现有产品和有效的更新数据，更新的字段应该匹配，同时保留未更改的字段")
     void productUpdateCorrectness(
             @ForAll("validProducts") Product originalProduct,
             @ForAll("validProducts") Product updateData) {
@@ -53,46 +53,46 @@ public class ProductUpdatePropertyTest extends PropertyTestBase {
         
         // Verify ID is preserved
         assert retrievedProduct.getId().equals(productId) : 
-            String.format("ID should be preserved: expected %d, got %d", 
+            String.format("ID应该被保留: 期望 %d, 得到 %d", 
                 productId, retrievedProduct.getId());
         
         // Verify updated fields match the update data
         assert retrievedProduct.getName().equals(updateData.getName()) : 
-            String.format("Name should be updated: expected '%s', got '%s'", 
+            String.format("名称应该被更新: 期望 '%s', 得到 '%s'", 
                 updateData.getName(), retrievedProduct.getName());
         
         assert retrievedProduct.getDescription().equals(updateData.getDescription()) : 
-            String.format("Description should be updated: expected '%s', got '%s'", 
+            String.format("描述应该被更新: 期望 '%s', 得到 '%s'", 
                 updateData.getDescription(), retrievedProduct.getDescription());
         
         assert retrievedProduct.getPrice().compareTo(updateData.getPrice()) == 0 : 
-            String.format("Price should be updated: expected %s, got %s", 
+            String.format("价格应该被更新: 期望 %s, 得到 %s", 
                 updateData.getPrice(), retrievedProduct.getPrice());
         
         assert retrievedProduct.getStockQuantity().equals(updateData.getStockQuantity()) : 
-            String.format("Stock quantity should be updated: expected %d, got %d", 
+            String.format("库存数量应该被更新: 期望 %d, 得到 %d", 
                 updateData.getStockQuantity(), retrievedProduct.getStockQuantity());
         
         // Handle nullable fields
         if (updateData.getCategory() == null) {
-            assert retrievedProduct.getCategory() == null : "Category should be null";
+            assert retrievedProduct.getCategory() == null : "分类应该是null";
         } else {
             assert retrievedProduct.getCategory().equals(updateData.getCategory()) : 
-                String.format("Category should be updated: expected '%s', got '%s'", 
+                String.format("分类应该被更新: 期望 '%s', 得到 '%s'", 
                     updateData.getCategory(), retrievedProduct.getCategory());
         }
         
         if (updateData.getImageUrl() == null) {
-            assert retrievedProduct.getImageUrl() == null : "Image URL should be null";
+            assert retrievedProduct.getImageUrl() == null : "图片URL应该是null";
         } else {
             assert retrievedProduct.getImageUrl().equals(updateData.getImageUrl()) : 
-                String.format("Image URL should be updated: expected '%s', got '%s'", 
+                String.format("图片URL应该被更新: 期望 '%s', 得到 '%s'", 
                     updateData.getImageUrl(), retrievedProduct.getImageUrl());
         }
         
         // Verify timestamps are set
-        assert retrievedProduct.getCreatedAt() != null : "Created timestamp should be set";
-        assert retrievedProduct.getUpdatedAt() != null : "Updated timestamp should be set";
+        assert retrievedProduct.getCreatedAt() != null : "创建时间戳应该被设置";
+        assert retrievedProduct.getUpdatedAt() != null : "更新时间戳应该被设置";
         
         // Note: We don't strictly verify createdAt preservation here because JPA auditing
         // behavior can vary between databases. In production with MySQL, createdAt would be

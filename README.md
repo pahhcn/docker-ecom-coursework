@@ -79,41 +79,48 @@
 
 ```bash
 # 1. 克隆仓库
-git clone <repository-url>
+git clone https://github.com/pahhcn/docker-ecom-coursework.git
 cd docker-ecom-coursework
 
 # 2. 启动所有服务
 docker-compose up --build
 
 # 3. 访问应用
-# 前端: http://localhost:80
+# 前端: http://localhost:8082
 # 后端 API: http://localhost:8080/api/products
 ```
 
 ### 方式二: Kubernetes + Jenkins (生产环境)
 
 ```bash
-# 1. 启动 Minikube
+# 1. 安装并启动 Minikube
 minikube start
 
-# 2. 设置 Docker Registry (可选)
-./ci/setup-docker-registry.sh
+# 2. 启动 Jenkins会自动配置kube环境
+./run-jenkins-local.sh
 
-# 3. 启动 Jenkins
-./ci/run-jenkins-local.sh
-
-# 4. 配置 Jenkins 访问 Kubernetes
-./ci/setup-jenkins-k8s.sh
 
 # 5. 访问 Jenkins
 # 打开 http://localhost:8090
 # 输入初始管理员密码（脚本会显示）
 
-# 6. 运行 Pipeline
+# 6. 配置自动构建
+# Jenkins 会自动每 2 分钟检查 Git 仓库
+# 检测到代码变更时自动触发构建
+
+# 7. 手动触发构建 (可选)
 # 进入 docker-ecom-coursework 任务
 # 点击 "Build with Parameters"
 # 选择参数后点击 "Build"
 ```
+
+### Git 仓库配置
+
+Pipeline 从以下 Git 仓库自动拉取代码：
+- **仓库地址**: https://github.com/pahhcn/docker-ecom-coursework.git
+- **分支**: ci
+- **轮询间隔**: 每 2 分钟
+- **克隆方式**: 浅克隆 (depth=1) 提高速度
 
 ## 项目结构
 
@@ -159,16 +166,25 @@ docker-ecom-coursework/
 ### Pipeline 阶段
 
 1. **环境信息** - 显示构建参数和环境配置
-2. **代码检出** - 使用本地挂载的代码
+2. **代码检出** - 从 Git 仓库克隆最新代码
 3. **构建阶段** - 构建后端应用和 Docker 镜像
 4. **推送镜像到仓库** - 推送镜像到 Docker Registry
 5. **单元测试** - 运行 JUnit 单元测试
 6. **集成测试** - 运行属性测试
 7. **代码覆盖率报告** - 生成 JaCoCo 覆盖率报告
-8. **Kubernetes 蓝绿部署** - 部署到指定环境 (blue/green)
-9. **健康检查** - 验证服务状态和启动端口转发
-10. **部署监控系统** - 可选部署 Prometheus + Grafana
-11. **部署验证** - 测试服务可访问性
+8. **标记构建成功** - 标记构建和测试通过
+9. **Kubernetes 蓝绿部署** - 仅在构建成功时部署到指定环境
+10. **健康检查** - 验证服务状态和启动端口转发
+11. **部署监控系统** - 可选部署 Prometheus + Grafana
+12. **部署验证** - 测试服务可访问性
+
+### 自动化构建
+
+Pipeline 配置了自动触发机制：
+- **轮询间隔**: 每 2 分钟检查一次 Git 仓库
+- **触发条件**: 检测到代码变更时自动构建
+- **部署策略**: 只有构建和测试全部成功才会部署新版本
+- **失败处理**: 构建或测试失败时保持使用原有版本
 
 ### 构建参数
 

@@ -17,7 +17,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.api.Assumptions;
 
 /**
  * Property-based tests for volume persistence across container lifecycle
@@ -27,7 +28,6 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
  * Note: This test requires Docker and TestContainers support.
  * Set ENABLE_CONTAINER_TESTS=true to run these tests.
  */
-@EnabledIfEnvironmentVariable(named = "ENABLE_CONTAINER_TESTS", matches = "true")
 public class VolumePersistencePropertyTest extends PropertyTestBase {
     
     private static MySQLContainer<?> mysqlContainer;
@@ -35,6 +35,11 @@ public class VolumePersistencePropertyTest extends PropertyTestBase {
     
     @BeforeAll
     static void setupContainer() {
+        // Only initialize if environment variable is set
+        if (!"true".equals(System.getenv("ENABLE_CONTAINER_TESTS"))) {
+            return;
+        }
+        
         // Create a unique volume name for this test run
         volumeName = "test-mysql-data-" + System.currentTimeMillis();
         
@@ -53,6 +58,11 @@ public class VolumePersistencePropertyTest extends PropertyTestBase {
     
     @AfterAll
     static void teardownContainer() {
+        // Only cleanup if environment variable is set
+        if (!"true".equals(System.getenv("ENABLE_CONTAINER_TESTS"))) {
+            return;
+        }
+        
         if (mysqlContainer != null) {
             mysqlContainer.stop();
         }
@@ -79,6 +89,9 @@ public class VolumePersistencePropertyTest extends PropertyTestBase {
     }
     
     private static DataSource createDataSource() {
+        if (mysqlContainer == null) {
+            throw new IllegalStateException("MySQL container not initialized. Make sure ENABLE_CONTAINER_TESTS=true is set.");
+        }
         return DataSourceBuilder.create()
                 .url(mysqlContainer.getJdbcUrl())
                 .username(mysqlContainer.getUsername())
@@ -88,8 +101,12 @@ public class VolumePersistencePropertyTest extends PropertyTestBase {
     }
     
     @Property(tries = 100)
-    @Label("For any set of products, data should persist across container stop/start cycles")
+    @Label("对于任何产品集，数据应该在容器停止/启动周期中持久化")
     void volumePersistenceAcrossContainerLifecycle(@ForAll("productLists") List<Product> productsToStore) {
+        // Skip test if environment variable is not set
+        Assumptions.assumeTrue("true".equals(System.getenv("ENABLE_CONTAINER_TESTS")), 
+            "Skipping container test: Set ENABLE_CONTAINER_TESTS=true to run this test");
+        
         // Skip empty lists to ensure we're testing actual persistence
         Assume.that(!productsToStore.isEmpty());
         
@@ -110,7 +127,7 @@ public class VolumePersistencePropertyTest extends PropertyTestBase {
         int countBeforeRestart = jdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM products", Integer.class);
         assert countBeforeRestart == productsToStore.size() : 
-            String.format("Expected %d products before restart, got %d", 
+            String.format("重启前期望 %d 个产品，得到 %d 个", 
                 productsToStore.size(), countBeforeRestart);
         
         // Simulate container restart by closing connections and reconnecting
@@ -129,7 +146,7 @@ public class VolumePersistencePropertyTest extends PropertyTestBase {
         int countAfterRestart = newJdbcTemplate.queryForObject(
             "SELECT COUNT(*) FROM products", Integer.class);
         assert countAfterRestart == productsToStore.size() : 
-            String.format("Expected %d products after restart, got %d", 
+            String.format("重启后期望 %d 个产品，得到 %d 个", 
                 productsToStore.size(), countAfterRestart);
         
         // Verify each product's data is intact
@@ -143,15 +160,15 @@ public class VolumePersistencePropertyTest extends PropertyTestBase {
                 productId
             );
             
-            assert retrievedProduct != null : "Product should exist after restart";
+            assert retrievedProduct != null : "重启后产品应该存在";
             assert retrievedProduct.getName().equals(originalProduct.getName()) : 
-                String.format("Name mismatch after restart: expected '%s', got '%s'", 
+                String.format("重启后名称不匹配: 期望 '%s', 得到 '%s'", 
                     originalProduct.getName(), retrievedProduct.getName());
             assert retrievedProduct.getPrice().compareTo(originalProduct.getPrice()) == 0 : 
-                String.format("Price mismatch after restart: expected %s, got %s", 
+                String.format("重启后价格不匹配: 期望 %s, 得到 %s", 
                     originalProduct.getPrice(), retrievedProduct.getPrice());
             assert retrievedProduct.getStockQuantity().equals(originalProduct.getStockQuantity()) : 
-                String.format("Stock quantity mismatch after restart: expected %d, got %d", 
+                String.format("重启后库存数量不匹配: 期望 %d, 得到 %d", 
                     originalProduct.getStockQuantity(), retrievedProduct.getStockQuantity());
         }
     }

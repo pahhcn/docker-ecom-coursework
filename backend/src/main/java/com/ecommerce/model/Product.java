@@ -19,27 +19,27 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @NotBlank(message = "Product name cannot be blank")
-    @Size(max = 255, message = "Product name cannot exceed 255 characters")
+    @NotBlank(message = "产品名称不能为空")
+    @Size(max = 255, message = "产品名称不能超过255个字符")
     @Column(nullable = false)
     private String name;
     
     @Column(columnDefinition = "TEXT")
     private String description;
     
-    @NotNull(message = "Price cannot be null")
-    @DecimalMin(value = "0.0", inclusive = true, message = "Price must be non-negative")
+    @NotNull(message = "价格不能为空")
+    @DecimalMin(value = "0.0", inclusive = true, message = "价格必须为非负数")
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
     
-    @Min(value = 0, message = "Stock quantity must be non-negative")
+    @Min(value = 0, message = "库存数量必须为非负数")
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity = 0;
     
-    @Size(max = 100, message = "Category cannot exceed 100 characters")
+    @Size(max = 100, message = "分类名称不能超过100个字符")
     private String category;
     
-    @Size(max = 500, message = "Image URL cannot exceed 500 characters")
+    @Size(max = 500, message = "图片URL不能超过500个字符")
     @Column(name = "image_url")
     private String imageUrl;
     

@@ -24,7 +24,7 @@ public class ProductDeletionPropertyTest extends PropertyTestBase {
     private ProductRepository productRepository;
     
     @Property(tries = 100)
-    @Label("For any existing product, after deletion it should not be retrievable")
+    @Label("对于任何现有产品，删除后应该无法检索")
     void productDeletionCompleteness(@ForAll("productSets") List<Product> productsToCreate) {
         // Clean database before test
         productRepository.deleteAll();
@@ -46,19 +46,19 @@ public class ProductDeletionPropertyTest extends PropertyTestBase {
         
         // Verify: Product is no longer retrievable by ID
         boolean exists = productRepository.existsById(deletedId);
-        assert !exists : String.format("Product with ID %d should not exist after deletion", deletedId);
+        assert !exists : String.format("删除后ID为 %d 的产品应该不存在", deletedId);
         
         // Verify: Product is not in the list of all products
         List<Product> remainingProducts = productRepository.findAll();
         for (Product p : remainingProducts) {
             assert !p.getId().equals(deletedId) : 
-                String.format("Deleted product with ID %d should not appear in product list", deletedId);
+                String.format("删除的产品ID %d 不应该出现在产品列表中", deletedId);
         }
         
         // Verify: Correct number of products remain
         int expectedCount = savedProducts.size() - 1;
         assert remainingProducts.size() == expectedCount : 
-            String.format("Expected %d products after deletion, but found %d", 
+            String.format("删除后期望剩余 %d 个产品，但找到 %d 个", 
                 expectedCount, remainingProducts.size());
         
         // Verify: All other products are still present
@@ -66,8 +66,8 @@ public class ProductDeletionPropertyTest extends PropertyTestBase {
             if (!saved.getId().equals(deletedId)) {
                 boolean stillExists = productRepository.existsById(saved.getId());
                 assert stillExists : 
-                    String.format("Product with ID %d should still exist after deleting product %d", 
-                        saved.getId(), deletedId);
+                    String.format("删除产品 %d 后，产品ID %d 应该仍然存在", 
+                        deletedId, saved.getId());
             }
         }
     }

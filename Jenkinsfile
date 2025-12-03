@@ -4,12 +4,15 @@ pipeline {
     environment {
         PROJECT_NAME = 'docker-ecom-coursework'
         IMAGE_TAG = "${BUILD_NUMBER}"
-        WORKSPACE_DIR = '/workspace'
+        GIT_REPO = 'https://github.com/pahhcn/docker-ecom-coursework.git'
+        GIT_BRANCH = 'main'
         K8S_NAMESPACE = 'ecommerce'
         KUBECONFIG = '/var/jenkins_home/.kube/config'
         // 镜像仓库配置
-        DOCKER_REGISTRY = 'localhost:5000'  // 本地 Registry，可改为 Docker Hub
-        REGISTRY_CREDENTIALS = 'docker-registry-credentials'  // Jenkins 凭据 ID
+        DOCKER_REGISTRY = 'localhost:5000'
+        REGISTRY_CREDENTIALS = 'docker-registry-credentials'
+        // 构建状态标记
+        BUILD_SUCCESS = 'false'
     }
     
     parameters {
@@ -42,7 +45,7 @@ pipeline {
     
     // 代码提交触发自动构建
     triggers {
-        pollSCM('H/5 * * * *')  // 每5分钟检查代码变更
+        pollSCM('H/2 * * * *')  // 每2分钟检查代码变更
     }
     
     stages {
@@ -58,7 +61,9 @@ pipeline {
                         echo "部署环境: Kubernetes 蓝绿部署"
                         echo "目标版本: ${params.K8S_VERSION}"
                         echo "自动切换流量: ${params.SWITCH_TRAFFIC}"
-                        echo "工作空间: ${WORKSPACE_DIR}"
+                        echo "工作空间: ${WORKSPACE}"
+                        echo "Git 仓库: ${GIT_REPO}"
+                        echo "Git 分支: ${GIT_BRANCH}"
                     """
                 }
             }
@@ -67,11 +72,37 @@ pipeline {
         stage('代码检出') {
             steps {
                 echo '========================================='
-                echo '📥 使用本地挂载代码'
+                echo '📥 从 Git 仓库克隆代码'
                 echo '========================================='
                 script {
-                    echo "代码路径: /workspace"
-                    sh 'ls -la /workspace'
+                    // 清理工作空间
+                    cleanWs()
+                    
+                    // 从 Git 仓库克隆代码
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: "*/${GIT_BRANCH}"]],
+                        userRemoteConfigs: [[url: "${GIT_REPO}"]],
+                        extensions: [
+                            [$class: 'CloneOption', depth: 1, noTags: false, shallow: true],
+                            [$class: 'CheckoutOption', timeout: 10]
+                        ]
+                    ])
+                    
+                    // 显示提交信息
+                    sh '''
+                        echo "✅ 代码检出完成"
+                        echo ""
+                        echo "仓库: ${GIT_REPO}"
+                        echo "分支: ${GIT_BRANCH}"
+                        echo ""
+                        echo "最新提交:"
+                        git log -1 --pretty=format:"  提交: %h%n  作者: %an%n  时间: %ad%n  消息: %s"
+                        echo ""
+                        echo ""
+                        echo "工作目录: ${WORKSPACE}"
+                        ls -la
+                    '''
                 }
             }
         }
@@ -83,27 +114,20 @@ pipeline {
                 echo '========================================='
                 script {
                     // 构建后端应用
-                    sh '''
+                    sh """
                         echo "构建后端应用..."
-                        # 获取实际的主机路径（用于Docker-in-Docker）
-                        REAL_HOST_PATH=$(grep "/workspace" /proc/self/mountinfo | awk '{print $4}' | head -1)
-                        if [ -z "$REAL_HOST_PATH" ]; then
-                            REAL_HOST_PATH="/workspace"
-                        fi
-                        echo "使用主机路径: $REAL_HOST_PATH"
+                        echo "工作空间路径: ${WORKSPACE}"
                         
-                        docker run --rm \
-                          -v ${REAL_HOST_PATH}/backend:/app \
-                          -v /root/.m2:/root/.m2 \
-                          -w /app \
-                          maven:3.9-eclipse-temurin-17 \
-                          mvn clean package -DskipTests
-                    '''
+                        cd ${WORKSPACE}/backend
+                        
+                        echo "使用本地 Maven 构建..."
+                        mvn -version
+                        mvn clean package -DskipTests
+                    """
                     
                     // 构建Docker镜像
                     sh """
                         echo "构建Docker镜像..."
-                        cd /workspace
                         docker build -t ${PROJECT_NAME}-frontend:${IMAGE_TAG} ./frontend
                         docker build -t ${PROJECT_NAME}-backend:${IMAGE_TAG} ./backend
                         
@@ -125,19 +149,10 @@ pipeline {
                 echo '========================================='
                 echo '🧪 运行单元测试'
                 echo '========================================='
-                sh '''
-                    REAL_HOST_PATH=$(grep "/workspace" /proc/self/mountinfo | awk '{print $4}' | head -1)
-                    if [ -z "$REAL_HOST_PATH" ]; then
-                        REAL_HOST_PATH="/workspace"
-                    fi
-                    
-                    docker run --rm \
-                      -v ${REAL_HOST_PATH}/backend:/app \
-                      -v /root/.m2:/root/.m2 \
-                      -w /app \
-                      maven:3.9-eclipse-temurin-17 \
-                      mvn test -Dtest=*ServiceTest
-                '''
+                sh """
+                    cd ${WORKSPACE}/backend
+                    mvn test -Dtest=*ServiceTest
+                """
             }
             post {
                 always {
@@ -154,25 +169,26 @@ pipeline {
                 echo '========================================='
                 echo '🔗 运行集成测试（属性测试）'
                 echo '========================================='
-                sh '''
-                    REAL_HOST_PATH=$(grep "/workspace" /proc/self/mountinfo | awk '{print $4}' | head -1)
-                    if [ -z "$REAL_HOST_PATH" ]; then
-                        REAL_HOST_PATH="/workspace"
-                    fi
+                sh """
+                    cd ${WORKSPACE}/backend
                     
                     # 只运行不需要Docker的属性测试
-                    # 排除: EndToEndDataFlowPropertyTest, VolumePersistencePropertyTest, ServiceCommunicationIntegrationTest
-                    docker run --rm \
-                      -v ${REAL_HOST_PATH}/backend:/app \
-                      -v /root/.m2:/root/.m2 \
-                      -w /app \
-                      maven:3.9-eclipse-temurin-17 \
-                      mvn test -Dtest=Product*PropertyTest
-                '''
+                    mvn test -Dtest=Product*PropertyTest
+                """
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: '/workspace/backend/target/surefire-reports/*.xml'
+                    junit allowEmptyResults: true, testResults: 'backend/target/surefire-reports/*.xml'
+                }
+            }
+        }
+        
+        stage('标记构建成功') {
+            steps {
+                script {
+                    // 如果到达这里，说明构建和测试都成功了
+                    env.BUILD_SUCCESS = 'true'
+                    echo "✅ 构建和测试成功，标记为可部署版本"
                 }
             }
         }
@@ -219,28 +235,19 @@ pipeline {
                 echo '========================================='
                 echo '📊 生成代码覆盖率报告'
                 echo '========================================='
-                sh '''
-                    REAL_HOST_PATH=$(grep "/workspace" /proc/self/mountinfo | awk '{print $4}' | head -1)
-                    if [ -z "$REAL_HOST_PATH" ]; then
-                        REAL_HOST_PATH="/workspace"
-                    fi
-                    
-                    docker run --rm \
-                      -v ${REAL_HOST_PATH}/backend:/app \
-                      -v /root/.m2:/root/.m2 \
-                      -w /app \
-                      maven:3.9-eclipse-temurin-17 \
-                      mvn jacoco:report
+                sh """
+                    cd ${WORKSPACE}/backend
+                    mvn jacoco:report
                     
                     echo ""
                     echo "✅ 覆盖率报告已生成"
                     echo "📊 报告位置: backend/target/site/jacoco/index.html"
                     
-                    # 显示覆盖率摘要（如果存在）
-                    if [ -f /workspace/backend/target/site/jacoco/index.html ]; then
+                    # 显示覆盖率摘要
+                    if [ -f ${WORKSPACE}/backend/target/site/jacoco/index.html ]; then
                         echo "可以在工作空间中查看完整的覆盖率报告"
                     fi
-                '''
+                """
             }
             post {
                 always {
@@ -248,9 +255,9 @@ pipeline {
                         // 使用 JaCoCo 插件发布覆盖率报告
                         try {
                             jacoco(
-                                execPattern: '/workspace/backend/target/jacoco.exec',
-                                classPattern: '/workspace/backend/target/classes',
-                                sourcePattern: '/workspace/backend/src/main/java'
+                                execPattern: 'backend/target/jacoco.exec',
+                                classPattern: 'backend/target/classes',
+                                sourcePattern: 'backend/src/main/java'
                             )
                             echo "✅ JaCoCo 覆盖率报告已发布"
                         } catch (Exception e) {
@@ -271,8 +278,6 @@ pipeline {
                     def version = params.K8S_VERSION
                     
                     sh """
-                        cd /workspace
-                        
                         # 标记镜像
                         echo "📦 准备镜像..."
                         docker tag ${PROJECT_NAME}-backend:${IMAGE_TAG} ecommerce-backend:latest
@@ -290,6 +295,12 @@ pipeline {
                         # 部署数据库（如果不存在）
                         echo "📦 确保数据库运行..."
                         kubectl apply -f k8s/database/ -n ${K8S_NAMESPACE} || true
+                        
+                        # 部署 ConfigMap 和 Secret
+                        echo "📦 部署配置文件..."
+                        kubectl apply -f k8s/backend/backend-configmap.yaml -n ${K8S_NAMESPACE} || true
+                        kubectl apply -f k8s/backend/backend-secret.yaml -n ${K8S_NAMESPACE} || true
+                        kubectl apply -f k8s/frontend/frontend-configmap.yaml -n ${K8S_NAMESPACE} || true
                         
                         # 部署到指定环境（blue或green）
                         echo "📦 部署到 ${version} 环境..."
@@ -350,24 +361,20 @@ pipeline {
                         kubectl get deployments -n ${K8S_NAMESPACE}
                         
                         echo ""
-                        echo "启动端口转发..."
-                        # 停止旧的端口转发
-                        pkill -f 'kubectl.*port-forward' || true
-                        sleep 2
-                        
-                        # 启动新的端口转发（后台运行）
-                        nohup kubectl port-forward -n ${K8S_NAMESPACE} service/frontend-service 8082:80 > /tmp/k8s-frontend.log 2>&1 &
-                        nohup kubectl port-forward -n ${K8S_NAMESPACE} service/backend-service 8080:8080 > /tmp/k8s-backend.log 2>&1 &
-                        
-                        sleep 5
+                        echo "获取服务访问信息..."
+                        # 获取 NodePort
+                        FRONTEND_PORT=\$(kubectl get svc frontend-service -n ${K8S_NAMESPACE} -o jsonpath='{.spec.ports[0].nodePort}')
+                        MINIKUBE_IP=\$(minikube ip)
                         
                         echo ""
-                        echo "✅ 端口转发已启动"
+                        echo "✅ 部署完成"
                         echo ""
-                        echo "访问服务:"
-                        echo "  前端: http://localhost:8082"
-                        echo "  后端: http://localhost:8080/api/products"
-                        echo "  健康检查: http://localhost:8080/actuator/health"
+                        echo "🌐 访问地址:"
+                        echo "   前端: http://\${MINIKUBE_IP}:\${FRONTEND_PORT}"
+                        echo "   或使用端口转发: minikube kubectl -- port-forward -n ${K8S_NAMESPACE} --address 0.0.0.0 service/frontend-service 8082:80"
+                        echo "   后端API: http://\${MINIKUBE_IP}:\${FRONTEND_PORT}/api/products"
+                        echo ""
+                        echo "💡 提示: 端口转发需要在宿主机终端手动运行，Jenkins 容器内的端口转发在构建结束后会停止"
                     """
                 }
             }
@@ -400,7 +407,11 @@ pipeline {
                             kubectl apply -f /workspace/monitoring/grafana/ -n monitoring || echo "⚠️ Grafana 配置不存在"
                         fi
                         
-                        echo ""
+                        # 部署 Alertmanager（如果配置存在）
+                        if [ -d "/workspace/monitoring/alertmanager" ]; then
+                            echo "部署 Alertmanager..."
+                            kubectl apply -f /workspace/monitoring/alertmanager/ -n monitoring || echo "⚠️ Alertmanager 配置不存在"
+                        fi
                         echo "✅ 监控系统部署完成"
                         echo "📊 查看监控服务:"
                         kubectl get all -n monitoring || echo "⚠️ 监控服务未配置"
@@ -409,6 +420,7 @@ pipeline {
                         echo "💡 访问监控服务需要端口转发:"
                         echo "   kubectl port-forward -n monitoring service/grafana 3000:3000"
                         echo "   kubectl port-forward -n monitoring service/prometheus 9090:9090"
+                        echo "   kubectl port-forward -n monitoring service/alertmanager 9093:9093"
                     '''
                 }
             }
@@ -436,18 +448,17 @@ pipeline {
                             echo "✅ 所有Pod运行正常"
                         fi
                         
-                        # 等待服务就绪后测试
+                        # 通过 K8s 内部服务测试
                         echo ""
-                        echo "等待服务就绪..."
-                        sleep 10
+                        echo "测试服务（通过 K8s 内部）..."
                         
-                        # 测试服务
-                        echo "测试前端服务..."
-                        curl -f http://localhost:8082/health && echo "✅ 前端服务正常" || echo "⚠️ 前端服务检查失败"
+                        # 使用 kubectl exec 在集群内部测试服务
+                        echo "测试后端健康检查..."
+                        kubectl run curl-test --image=curlimages/curl --rm -i --restart=Never --timeout=30s -- \
+                            curl -sf http://backend-service.${K8S_NAMESPACE}.svc.cluster.local:8080/actuator/health \
+                            && echo "✅ 后端服务正常" || echo "⚠️ 后端服务检查失败"
                         
-                        echo "测试后端服务..."
-                        curl -f http://localhost:8080/actuator/health && echo "✅ 后端服务正常" || echo "⚠️ 后端服务检查失败"
-                        
+                        echo ""
                         echo "✅ Kubernetes蓝绿部署验证完成"
                     """
                 }
@@ -473,6 +484,7 @@ pipeline {
                       查看服务: kubectl get all -n monitoring
                       访问 Grafana: kubectl port-forward -n monitoring service/grafana 3000:3000
                       访问 Prometheus: kubectl port-forward -n monitoring service/prometheus 9090:9090
+                      访问 Alertmanager: kubectl port-forward -n monitoring service/alertmanager 9093:9093
                     """
                 }
                 
@@ -494,10 +506,9 @@ pipeline {
                 echo "   🔄 流量状态: ${trafficStatus}"
                 echo "   📊 APM监控: ${params.DEPLOY_MONITORING ? '✅ 已启用' : '⬜ 未启用'}"
                 echo ''
-                echo '🌐 访问地址:'
-                echo '   前端: http://localhost:8082'
-                echo '   后端: http://localhost:8080/api/products'
-                echo '   健康检查: http://localhost:8080/actuator/health'
+                echo '🌐 访问服务（需要在宿主机运行端口转发）:'
+                echo '   ./start-port-forward.sh'
+                echo '   然后访问: http://localhost:8082'
                 
                 if (!params.SWITCH_TRAFFIC) {
                     echo ''

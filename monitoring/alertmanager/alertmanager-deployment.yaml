@@ -1,0 +1,164 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: monitoring
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+      - name: alertmanager
+        image: prom/alertmanager:latest
+        ports:
+        - containerPort: 9093
+          name: http
+        args:
+        - --config.file=/etc/alertmanager/alertmanager.yml
+        - --storage.path=/alertmanager
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/alertmanager
+        - name: storage-volume
+          mountPath: /alertmanager
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9093
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9093
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: config-volume
+        configMap:
+          name: alertmanager-config
+      - name: storage-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+  labels:
+    app: alertmanager
+data:
+  alertmanager.yml: |
+    # Alertmanager 配置文件
+    # Alertmanager Configuration File
+    # 用于管理和路由告警通知
+    # For managing and routing alert notifications
+
+    global:
+      # 解析超时 - Resolve timeout
+      resolve_timeout: 5m
+      # SMTP 配置 (可选) - SMTP configuration (optional)
+      # smtp_smarthost: 'smtp.gmail.com:587'
+      # smtp_from: 'alertmanager@example.com'
+      # smtp_auth_username: 'your-email@gmail.com'
+      # smtp_auth_password: 'your-password'
+
+    # 路由配置 - Route configuration
+    route:
+      # 默认接收器 - Default receiver
+      receiver: 'default'
+      # 分组等待时间 - Group wait time
+      group_wait: 10s
+      # 分组间隔 - Group interval
+      group_interval: 10s
+      # 重复间隔 - Repeat interval
+      repeat_interval: 12h
+      # 分组依据 - Group by
+      group_by: ['alertname', 'cluster', 'service']
+
+      # 子路由 - Sub-routes
+      routes:
+        # 关键告警路由 - Critical alerts route
+        - match:
+            severity: critical
+          receiver: 'critical-alerts'
+          continue: true
+          group_wait: 5s
+          repeat_interval: 4h
+
+        # 警告告警路由 - Warning alerts route
+        - match:
+            severity: warning
+          receiver: 'warning-alerts'
+          group_wait: 30s
+          repeat_interval: 12h
+
+    # 接收器配置 - Receivers configuration
+    receivers:
+      # 默认接收器 - Default receiver
+      - name: 'default'
+        webhook_configs:
+          - url: 'http://localhost:5001/webhook'
+            send_resolved: true
+
+      # 关键告警接收器 - Critical alerts receiver
+      - name: 'critical-alerts'
+        # Webhook 配置 - Webhook configuration
+        webhook_configs:
+          - url: 'http://localhost:5001/webhook/critical'
+            send_resolved: true
+        # Email 配置 (可选) - Email configuration (optional)
+        # email_configs:
+        #   - to: 'ops-team@example.com'
+        #     headers:
+        #       Subject: '[CRITICAL] {{ .GroupLabels.alertname }}'
+        # Slack 配置 (可选) - Slack configuration (optional)
+        # slack_configs:
+        #   - api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+        #     channel: '#alerts-critical'
+        #     title: '[CRITICAL] {{ .GroupLabels.alertname }}'
+        #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+      # 警告告警接收器 - Warning alerts receiver
+      - name: 'warning-alerts'
+        webhook_configs:
+          - url: 'http://localhost:5001/webhook/warning'
+            send_resolved: true
+        # Email 配置 (可选) - Email configuration (optional)
+        # email_configs:
+        #   - to: 'dev-team@example.com'
+        #     headers:
+        #       Subject: '[WARNING] {{ .GroupLabels.alertname }}'
+
+    # 抑制规则 - Inhibition rules
+    inhibit_rules:
+      # 当服务宕机时，抑制其他告警 - Inhibit other alerts when service is down
+      - source_match:
+          severity: 'critical'
+          alertname: 'ServiceDown'
+        target_match:
+          severity: 'warning'
+        equal: ['service', 'instance']
+
+      # 当数据库宕机时，抑制后端告警 - Inhibit backend alerts when database is down
+      - source_match:
+          severity: 'critical'
+          alertname: 'DatabaseDown'
+        target_match:
+          component: 'backend'
+        equal: ['environment']

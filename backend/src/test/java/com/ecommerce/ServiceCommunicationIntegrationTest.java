@@ -140,9 +140,9 @@ public class ServiceCommunicationIntegrationTest {
             request, HttpResponse.BodyHandlers.ofString());
         
         Assertions.assertEquals(200, response.statusCode(), 
-            "Backend health check should return 200");
+            "后端健康检查应该返回200");
         Assertions.assertTrue(response.body().contains("UP"), 
-            "Backend should be UP and connected to database");
+            "后端应该连接到数据库并状态为UP");
         
         // Verify database is accessible directly
         String jdbcUrl = mysqlContainer.getJdbcUrl();
@@ -150,7 +150,7 @@ public class ServiceCommunicationIntegrationTest {
                 jdbcUrl, "root", "rootpassword");
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT 1")) {
-            Assertions.assertTrue(rs.next(), "Database should be accessible");
+            Assertions.assertTrue(rs.next(), "数据库应该可访问");
         }
     }
     
@@ -176,7 +176,7 @@ public class ServiceCommunicationIntegrationTest {
             createRequest, HttpResponse.BodyHandlers.ofString());
         
         Assertions.assertEquals(201, createResponse.statusCode(), 
-            "Product creation should return 201");
+            "产品创建应该返回201");
         
         // Retrieve products
         HttpRequest getRequest = HttpRequest.newBuilder()
@@ -189,9 +189,9 @@ public class ServiceCommunicationIntegrationTest {
             getRequest, HttpResponse.BodyHandlers.ofString());
         
         Assertions.assertEquals(200, getResponse.statusCode(), 
-            "Product retrieval should return 200");
+            "产品检索应该返回200");
         Assertions.assertTrue(getResponse.body().contains("Test Product"), 
-            "Response should contain created product");
+            "响应应该包含创建的产品");
     }
     
     @Test
@@ -212,9 +212,9 @@ public class ServiceCommunicationIntegrationTest {
             healthRequest, HttpResponse.BodyHandlers.ofString());
         
         Assertions.assertEquals(200, healthResponse.statusCode(), 
-            "Frontend health check should return 200");
+            "前端健康检查应该返回200");
         Assertions.assertTrue(healthResponse.body().contains("healthy"), 
-            "Frontend should report healthy status");
+            "前端应该报告健康状态");
         
         // Test frontend can proxy API requests to backend
         HttpRequest apiRequest = HttpRequest.newBuilder()
@@ -227,7 +227,7 @@ public class ServiceCommunicationIntegrationTest {
             apiRequest, HttpResponse.BodyHandlers.ofString());
         
         Assertions.assertEquals(200, apiResponse.statusCode(), 
-            "Frontend should successfully proxy API requests to backend");
+            "前端应该成功将API请求代理到后端");
     }
     
     @Test
@@ -249,7 +249,7 @@ public class ServiceCommunicationIntegrationTest {
         
         // If backend is healthy, it successfully resolved 'database' hostname
         Assertions.assertEquals(200, response.statusCode(), 
-            "Backend should resolve database hostname and connect successfully");
+            "后端应该解析数据库主机名并成功连接");
         
         // Verify frontend can resolve 'backend' hostname by proxying requests
         String frontendUrl = "http://" + frontendContainer.getHost() + ":" + 
@@ -266,7 +266,7 @@ public class ServiceCommunicationIntegrationTest {
         
         // If frontend can proxy to backend, it successfully resolved 'backend' hostname
         Assertions.assertEquals(200, frontendResponse.statusCode(), 
-            "Frontend should resolve backend hostname and proxy requests successfully");
+            "前端应该解析后端主机名并成功代理请求");
     }
     
     @Test
@@ -279,7 +279,7 @@ public class ServiceCommunicationIntegrationTest {
                 jdbcUrl, "root", "rootpassword");
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT 1")) {
-            Assertions.assertTrue(rs.next(), "Database health check should pass");
+            Assertions.assertTrue(rs.next(), "数据库健康检查应该通过");
         }
         
         // Test backend health
@@ -296,9 +296,9 @@ public class ServiceCommunicationIntegrationTest {
             backendRequest, HttpResponse.BodyHandlers.ofString());
         
         Assertions.assertEquals(200, backendResponse.statusCode(), 
-            "Backend health check should return 200");
+            "后端健康检查应该返回200");
         Assertions.assertTrue(backendResponse.body().contains("UP"), 
-            "Backend health status should be UP");
+            "后端健康状态应该是UP");
         
         // Test frontend health
         String frontendUrl = "http://" + frontendContainer.getHost() + ":" + 
@@ -314,8 +314,8 @@ public class ServiceCommunicationIntegrationTest {
             frontendRequest, HttpResponse.BodyHandlers.ofString());
         
         Assertions.assertEquals(200, frontendResponse.statusCode(), 
-            "Frontend health check should return 200");
+            "前端健康检查应该返回200");
         Assertions.assertTrue(frontendResponse.body().contains("healthy"), 
-            "Frontend health status should be healthy");
+            "前端健康状态应该是healthy");
     }
 }

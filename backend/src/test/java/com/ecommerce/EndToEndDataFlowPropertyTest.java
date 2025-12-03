@@ -20,7 +20,8 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.api.Assumptions;
 
 /**
  * Property-based tests for end-to-end data flow integrity
@@ -30,7 +31,6 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
  * Note: This test requires Docker and the backend image to be built.
  * Set ENABLE_E2E_TESTS=true to run these tests.
  */
-@EnabledIfEnvironmentVariable(named = "ENABLE_E2E_TESTS", matches = "true")
 public class EndToEndDataFlowPropertyTest extends PropertyTestBase {
     
     private static Network network;
@@ -42,6 +42,11 @@ public class EndToEndDataFlowPropertyTest extends PropertyTestBase {
     
     @BeforeAll
     static void setupContainers() {
+        // Only initialize if environment variable is set
+        if (!"true".equals(System.getenv("ENABLE_E2E_TESTS"))) {
+            return;
+        }
+        
         // Create a shared network for all containers
         network = Network.newNetwork();
         
@@ -109,6 +114,11 @@ public class EndToEndDataFlowPropertyTest extends PropertyTestBase {
     
     @AfterAll
     static void teardownContainers() {
+        // Only cleanup if environment variable is set
+        if (!"true".equals(System.getenv("ENABLE_E2E_TESTS"))) {
+            return;
+        }
+        
         if (backendContainer != null) {
             backendContainer.stop();
         }
@@ -121,8 +131,12 @@ public class EndToEndDataFlowPropertyTest extends PropertyTestBase {
     }
     
     @Property(tries = 100)
-    @Label("For any product data, end-to-end flow should preserve data integrity from creation to retrieval")
+    @Label("对于任何产品数据，端到端流程应该保持从创建到检索的数据完整性")
     void endToEndDataFlowIntegrity(@ForAll("validProducts") Product productToCreate) {
+        // Skip test if environment variable is not set
+        Assumptions.assumeTrue("true".equals(System.getenv("ENABLE_E2E_TESTS")), 
+            "Skipping E2E test: Set ENABLE_E2E_TESTS=true to run this test");
+        
         try {
             // Step 1: Create product via backend API (POST)
             productToCreate.setId(null); // Ensure ID is null for creation
@@ -139,13 +153,13 @@ public class EndToEndDataFlowPropertyTest extends PropertyTestBase {
                 createRequest, HttpResponse.BodyHandlers.ofString());
             
             assert createResponse.statusCode() == 201 : 
-                String.format("Expected 201 status, got %d: %s", 
+                String.format("期望201状态码，得到 %d: %s", 
                     createResponse.statusCode(), createResponse.body());
             
             // Parse created product to get ID
             Product createdProduct = objectMapper.readValue(
                 createResponse.body(), Product.class);
-            assert createdProduct.getId() != null : "Created product should have an ID";
+            assert createdProduct.getId() != null : "创建的产品应该有ID";
             
             // Step 2: Retrieve product via backend API (GET by ID)
             HttpRequest getRequest = HttpRequest.newBuilder()
@@ -158,7 +172,7 @@ public class EndToEndDataFlowPropertyTest extends PropertyTestBase {
                 getRequest, HttpResponse.BodyHandlers.ofString());
             
             assert getResponse.statusCode() == 200 : 
-                String.format("Expected 200 status, got %d: %s", 
+                String.format("期望200状态码，得到 %d: %s", 
                     getResponse.statusCode(), getResponse.body());
             
             // Parse retrieved product
@@ -167,41 +181,41 @@ public class EndToEndDataFlowPropertyTest extends PropertyTestBase {
             
             // Step 3: Verify data integrity - all fields should match
             assert retrievedProduct.getId().equals(createdProduct.getId()) : 
-                String.format("ID mismatch: expected %d, got %d", 
+                String.format("ID不匹配: 期望 %d, 得到 %d", 
                     createdProduct.getId(), retrievedProduct.getId());
             
             assert retrievedProduct.getName().equals(productToCreate.getName()) : 
-                String.format("Name mismatch: expected '%s', got '%s'", 
+                String.format("名称不匹配: 期望 '%s', 得到 '%s'", 
                     productToCreate.getName(), retrievedProduct.getName());
             
             assert retrievedProduct.getDescription().equals(productToCreate.getDescription()) : 
-                String.format("Description mismatch: expected '%s', got '%s'", 
+                String.format("描述不匹配: 期望 '%s', 得到 '%s'", 
                     productToCreate.getDescription(), retrievedProduct.getDescription());
             
             assert retrievedProduct.getPrice().compareTo(productToCreate.getPrice()) == 0 : 
-                String.format("Price mismatch: expected %s, got %s", 
+                String.format("价格不匹配: 期望 %s, 得到 %s", 
                     productToCreate.getPrice(), retrievedProduct.getPrice());
             
             assert retrievedProduct.getStockQuantity().equals(productToCreate.getStockQuantity()) : 
-                String.format("Stock quantity mismatch: expected %d, got %d", 
+                String.format("库存数量不匹配: 期望 %d, 得到 %d", 
                     productToCreate.getStockQuantity(), retrievedProduct.getStockQuantity());
             
             // Handle nullable fields
             if (productToCreate.getCategory() == null) {
                 assert retrievedProduct.getCategory() == null : 
-                    "Category should be null but got: " + retrievedProduct.getCategory();
+                    "分类应该是null但得到: " + retrievedProduct.getCategory();
             } else {
                 assert retrievedProduct.getCategory().equals(productToCreate.getCategory()) : 
-                    String.format("Category mismatch: expected '%s', got '%s'", 
+                    String.format("分类不匹配: 期望 '%s', 得到 '%s'", 
                         productToCreate.getCategory(), retrievedProduct.getCategory());
             }
             
             if (productToCreate.getImageUrl() == null) {
                 assert retrievedProduct.getImageUrl() == null : 
-                    "Image URL should be null but got: " + retrievedProduct.getImageUrl();
+                    "图片URL应该是null但得到: " + retrievedProduct.getImageUrl();
             } else {
                 assert retrievedProduct.getImageUrl().equals(productToCreate.getImageUrl()) : 
-                    String.format("Image URL mismatch: expected '%s', got '%s'", 
+                    String.format("图片URL不匹配: 期望 '%s', 得到 '%s'", 
                         productToCreate.getImageUrl(), retrievedProduct.getImageUrl());
             }
             
@@ -216,14 +230,14 @@ public class EndToEndDataFlowPropertyTest extends PropertyTestBase {
                 listRequest, HttpResponse.BodyHandlers.ofString());
             
             assert listResponse.statusCode() == 200 : 
-                String.format("Expected 200 status for list, got %d", listResponse.statusCode());
+                String.format("列表期望200状态码，得到 %d", listResponse.statusCode());
             
             // Verify the created product is in the list
             String listBody = listResponse.body();
             assert listBody.contains(createdProduct.getId().toString()) : 
-                "Product list should contain the created product ID";
+                "产品列表应该包含创建的产品ID";
             assert listBody.contains(productToCreate.getName()) : 
-                "Product list should contain the product name";
+                "产品列表应该包含产品名称";
             
             // Clean up: Delete the product
             HttpRequest deleteRequest = HttpRequest.newBuilder()

@@ -15,7 +15,7 @@ import java.math.RoundingMode;
 public abstract class PropertyTestBase {
     
     /**
-     * Generate valid product names
+     * 生成有效的产品名称
      */
     protected Arbitrary<String> productNames() {
         return Arbitraries.strings()
@@ -24,11 +24,11 @@ public abstract class PropertyTestBase {
                 .withChars(' ', '-', '_')
                 .ofMinLength(1)
                 .ofMaxLength(100)
-                .filter(s -> !s.trim().isEmpty()); // Ensure not blank
+                .filter(s -> !s.trim().isEmpty()); // 确保不为空
     }
     
     /**
-     * Generate valid descriptions
+     * 生成有效的描述
      */
     protected Arbitrary<String> descriptions() {
         return Arbitraries.strings()
@@ -39,7 +39,7 @@ public abstract class PropertyTestBase {
     }
     
     /**
-     * Generate valid prices (0.01 to 9999.99)
+     * 生成有效的价格（0.01到9999.99）
      */
     protected Arbitrary<BigDecimal> prices() {
         return Arbitraries.doubles()
@@ -48,14 +48,14 @@ public abstract class PropertyTestBase {
     }
     
     /**
-     * Generate valid stock quantities (0 to 10000)
+     * 生成有效的库存数量（0到10000）
      */
     protected Arbitrary<Integer> stockQuantities() {
         return Arbitraries.integers().between(0, 10000);
     }
     
     /**
-     * Generate valid categories
+     * 生成有效的分类
      */
     protected Arbitrary<String> categories() {
         return Arbitraries.of(
@@ -67,12 +67,12 @@ public abstract class PropertyTestBase {
                 "Toys",
                 "Food & Beverage",
                 "Health & Beauty",
-                null  // Allow null categories
+                null  // 允许null分类
         );
     }
     
     /**
-     * Generate valid image URLs
+     * 生成有效的图片URL
      */
     protected Arbitrary<String> imageUrls() {
         return Arbitraries.strings()
@@ -82,11 +82,11 @@ public abstract class PropertyTestBase {
                 .ofMinLength(10)
                 .ofMaxLength(100)
                 .map(s -> "https://example.com/images/" + s + ".jpg")
-                .injectNull(0.1);  // 10% chance of null
+                .injectNull(0.1);  // 10%的null几率
     }
     
     /**
-     * Generate valid Product objects
+     * 生成有效的Product对象
      */
     protected Arbitrary<Product> validProducts() {
         return Combinators.combine(

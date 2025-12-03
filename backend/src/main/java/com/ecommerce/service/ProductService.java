@@ -21,38 +21,38 @@ public class ProductService {
     }
     
     /**
-     * Get all products
-     * @return List of all products
+     * 获取所有产品
+     * @return 所有产品的列表
      */
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
     
     /**
-     * Get product by ID
-     * @param id Product ID
-     * @return Optional containing the product if found
+     * 根据ID获取产品
+     * @param id 产品ID
+     * @return 如果找到则包含产品的Optional对象
      */
     public Optional<Product> getProductById(Long id) {
         return productRepository.findById(id);
     }
     
     /**
-     * Create a new product
-     * @param product Product to create
-     * @return Created product
+     * 创建新产品
+     * @param product 要创建的产品
+     * @return 创建的产品
      */
     public Product createProduct(Product product) {
-        // Ensure ID is null for new products
+        // 确保新产品的ID为null
         product.setId(null);
         return productRepository.save(product);
     }
     
     /**
-     * Update an existing product
-     * @param id Product ID
-     * @param productDetails Updated product details
-     * @return Updated product if found
+     * 更新现有产品
+     * @param id 产品ID
+     * @param productDetails 更新的产品详情
+     * @return 如果找到则返回更新后的产品
      */
     public Optional<Product> updateProduct(Long id, Product productDetails) {
         return productRepository.findById(id)
@@ -68,9 +68,9 @@ public class ProductService {
     }
     
     /**
-     * Delete a product
-     * @param id Product ID
-     * @return true if product was deleted, false if not found
+     * 删除产品
+     * @param id 产品ID
+     * @return 如果产品被删除则返回true，否则返回false
      */
     public boolean deleteProduct(Long id) {
         if (productRepository.existsById(id)) {

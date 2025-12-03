@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品管理</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="index.html" class="back-link">&larr; 返回产品列表</a>
+            <h1>产品管理</h1>
+            <p>管理所有产品的增删改查操作</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="admin-actions">
+            <button id="add-product-btn" class="btn btn-primary">+ 添加新产品</button>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>正在加载产品...</p>
+        </div>
+
+        <div id="error" class="error hidden">
+            <p class="error-message"></p>
+            <button onclick="location.reload()">重试</button>
+        </div>
+
+        <div id="product-table-container" class="hidden">
+            <table class="product-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>图片</th>
+                        <th>名称</th>
+                        <th>分类</th>
+                        <th>价格</th>
+                        <th>库存</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="product-table-body">
+                    <!-- 产品将在此处动态加载 -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- 添加/编辑产品模态框 -->
+    <div id="product-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">添加产品</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                
+                <div class="form-group">
+                    <label for="product-name">产品名称 *</label>
+                    <input type="text" id="product-name" required maxlength="255">
+                </div>
+
+                <div class="form-group">
+                    <label for="product-category">分类</label>
+                    <input type="text" id="product-category" maxlength="100">
+                </div>
+
+                <div class="form-group">
+                    <label for="product-price">价格 (¥) *</label>
+                    <input type="number" id="product-price" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="product-stock">库存数量 *</label>
+                    <input type="number" id="product-stock" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="product-image-url">图片URL</label>
+                    <input type="url" id="product-image-url" maxlength="500">
+                </div>
+
+                <div class="form-group">
+                    <label for="product-description">产品描述</label>
+                    <textarea id="product-description" rows="4"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div id="delete-modal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>确认删除</h2>
+                <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除产品 "<span id="delete-product-name"></span>" 吗？</p>
+                <p class="warning-text">此操作无法撤销！</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">取消</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 电商系统。保留所有权利。</p>
+        </div>
+    </footer>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>

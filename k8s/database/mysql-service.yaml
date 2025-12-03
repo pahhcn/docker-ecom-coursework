@@ -12,5 +12,5 @@ spec:
     targetPort: 3306
     protocol: TCP
     name: mysql
-  clusterIP: None  # Headless service for StatefulSet
+  clusterIP: None  # StatefulSet的无头服务
   type: ClusterIP
