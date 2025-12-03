@@ -634,18 +634,3 @@ http://localhost:8080/swagger-ui.html
 **未来版本**：将使用 URL 版本控制
 - `/api/v1/products`
 - `/api/v2/products`
-
-## 支持
-
-如有 API 问题或疑问：
-1. 查看本文档
-2. 查看错误消息
-3. 查看[故障排查指南](troubleshooting_CN.md)
-4. 联系后端团队
-
-## 参考资料
-
-- [OpenAPI 规范](https://swagger.io/specification/)
-- [REST API 最佳实践](https://restfulapi.net/)
-- [HTTP 状态码](https://httpstatuses.com/)
-- [Spring Boot REST 文档](https://spring.io/guides/gs/rest-service/)
